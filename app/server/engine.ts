@@ -22,6 +22,7 @@ import {
 import { FIRM, PERSONAS, ROOM_RULES } from "./agents.js";
 import { realLlm, type Llm } from "./llm.js";
 import { synthesize } from "./tts.js";
+import { BandChannel, glasserNews } from "./sponsors.js";
 import { memoryFor, runBruin, scorecardFor, simulationFor, waterfallFor, weakSpotsFor, writeSession } from "./bruin.js";
 
 // Public market reference the panel uses (sources in docs/RESEARCH.md).
@@ -111,6 +112,8 @@ export class Session {
   votes: { agent: AgentId; vote: string; reason: string }[] = [];
   outcome: "signed" | "pass" | "walked_away" | "open" = "open";
   memory: string | null = null;
+  diligence: string | null = null; // associate's pre-meeting memo (Glasser news)
+  private band: BandChannel | null = null; // live partner channel in BAND
   busy = false;
   founderTurns = 0;
   negotiationRounds = 0;
@@ -148,6 +151,12 @@ export class Session {
     const entry: LedgerEntry = { id: ++this.ledgerSeq, t: this.t(), agent, kind, text, ...extra };
     this.ledger.push(entry);
     this.emit({ type: "ledger", entry });
+    // Mirror the partners' private channel into the BAND room.
+    if (this.band && ["whisper", "fact_check", "vote", "decision", "terms", "memory"].includes(kind) && agent !== "system") {
+      const who = PERSONAS[agent].name;
+      const to = extra.to ? ` → ${PERSONAS[extra.to].name}` : "";
+      this.band.post(`[${who}${to} · ${kind.replace("_", "-")}] ${text}`);
+    }
   }
   // Voices are generated before the line is emitted so caption and audio arrive together.
   private async speak(speaker: AgentId, text: string) {
@@ -215,13 +224,32 @@ Your current stance: ${this.agents[a].stance}. Colleagues' visible stances: ${st
 CONVERSATION SO FAR:
 ${recent || "(nothing yet)"}
 ${toMe ? `\nPRIVATE MESSAGES TO YOU:\n${toMe}` : ""}
-${facts ? `\n${facts}` : ""}`;
+${facts ? `\n${facts}` : ""}${this.diligence ? `\nAssociate's pre-meeting diligence (recent news in this market, via Glasser): ${this.diligence}` : ""}`;
   }
 
   // ---------- flow ----------
   async start() {
     this.memory = await memoryFor(this.founderKey);
     if (this.memory) this.log("system", "memory", `Panel remembers this founder: ${this.memory}`);
+    const [band, news] = await Promise.all([
+      BandChannel.open().catch((e) => {
+        this.log("system", "system", `BAND channel unavailable: ${(e as Error).message}`);
+        return null;
+      }),
+      glasserNews(`${this.info.one_liner} startup funding competitors`).catch((e) => {
+        this.log("system", "system", `Glasser diligence unavailable: ${(e as Error).message}`);
+        return [];
+      }),
+    ]);
+    this.band = band;
+    if (band) {
+      this.log("system", "system", `Partner channel is live in BAND (room ${band.chatId}).`);
+      band.post(`Partner channel opened for ${this.info.company} (${this.info.founder_name}) — ${this.info.one_liner}. Whispers, fact-checks and votes follow.`);
+    }
+    if (news.length) {
+      this.diligence = news.map((n) => `${n.title}${n.source ? ` (${n.source}${n.date_text ? `, ${n.date_text}` : ""})` : ""}`).join("; ");
+      this.log("associate", "fact_check", `Pre-meeting diligence via Glasser — recent news in this market: ${this.diligence}`);
+    }
     this.pushAgents();
     this.setPhase("pitch");
     await this.speak(
