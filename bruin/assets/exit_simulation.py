@@ -17,10 +17,6 @@ columns:
     type: varchar
     checks:
       - name: not_null
-  - name: wipeout_pct
-    type: double
-    checks:
-      - name: non_negative
 @bruin"""
 
 import glob

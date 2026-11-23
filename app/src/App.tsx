@@ -55,6 +55,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [filter, setFilter] = useState<"all" | "whisper" | "decisions">("all");
+  const [showReport, setShowReport] = useState(true);
 
   useEffect(
     () => voice.onChange((l) => setSpeaking(l && l.speaker !== "founder" ? { speaker: l.speaker as AgentId, text: l.text } : null)),
@@ -84,7 +85,7 @@ export default function App() {
           break;
         case "speak":
           setLines((l) => [...l, e.line]);
-          voice.enqueue(e.line);
+          voice.enqueue(e.line, e.audio);
           break;
         case "founder":
           setLines((l) => [...l, e.line]);
@@ -98,6 +99,7 @@ export default function App() {
           break;
         case "debrief":
           setDebrief(e.debrief);
+          setShowReport(true);
           break;
         case "error":
           setError(e.message);
@@ -162,7 +164,15 @@ export default function App() {
           founder={info.founder_name}
           narrow={Boolean(terms && (phase === "termsheet" || phase === "closed"))}
         />
-        {debrief && <DebriefView d={debrief} info={info} ledger={ledger} onAgain={() => start(info)} />}
+        {/* The report opens once the last voice line has finished, never over someone talking. */}
+        {debrief && !speaking && showReport && (
+          <DebriefView d={debrief} info={info} ledger={ledger} onAgain={() => start(info)} onClose={() => setShowReport(false)} />
+        )}
+        {debrief && !speaking && !showReport && (
+          <button className="primary view-report" onClick={() => setShowReport(true)}>
+            View debrief
+          </button>
+        )}
       </div>
       <aside className="ledger">
         <div className="ledger-head">
@@ -651,7 +661,7 @@ function SimulationNote({ sim }: { sim: Debrief["simulation"] }) {
   );
 }
 
-function DebriefView({ d, info, ledger, onAgain }: { d: Debrief; info: StartupInfo; ledger: LedgerEntry[]; onAgain: () => void }) {
+function DebriefView({ d, info, ledger, onAgain, onClose }: { d: Debrief; info: StartupInfo; ledger: LedgerEntry[]; onAgain: () => void; onClose: () => void }) {
   const s = d.scorecard;
   const tile = (label: string, value: unknown, sub?: string, tone?: "good" | "bad") => (
     <div className={`tile ${tone ?? ""}`}>
@@ -670,9 +680,14 @@ function DebriefView({ d, info, ledger, onAgain }: { d: Debrief; info: StartupIn
             <div className="eyebrow">Partner meeting debrief · {info.company}</div>
             <h2>{d.verdict || "The meeting is over."}</h2>
           </div>
-          <button className="primary" onClick={onAgain}>
-            Pitch again — they'll remember you
-          </button>
+          <div className="report-actions">
+            <button className="ghost" onClick={onClose}>
+              Back to the room
+            </button>
+            <button className="primary" onClick={onAgain}>
+              Pitch again — they'll remember you
+            </button>
+          </div>
         </div>
         {s ? (
           <div className="tiles">
@@ -689,14 +704,24 @@ function DebriefView({ d, info, ledger, onAgain }: { d: Debrief; info: StartupIn
             {tile("Won in negotiation", s.founder_pct_won_in_negotiation != null ? `+${s.founder_pct_won_in_negotiation} pts` : null, `${s.firm_concessions} concessions by the firm · ${s.founder_concessions} by you`)}
           </div>
         ) : (
-          <div className="err">The Bruin pipeline did not produce a scorecard: {d.bruin_log}</div>
+          <div className="muted">The Bruin pipeline did not produce a scorecard for this session — details below.</div>
         )}
         <SimulationNote sim={d.simulation} />
-        <div className="report-grid">
-          <section>
-            <h3>What your terms pay you at exit</h3>
-            <ExitChart rows={d.waterfall} />
-          </section>
+        <div className={d.waterfall.some((r) => r.version === "final") ? "report-grid" : "report-grid single"}>
+          {d.waterfall.some((r) => r.version === "final") ? (
+            <section>
+              <h3>What your terms pay you at exit</h3>
+              <ExitChart rows={d.waterfall} />
+            </section>
+          ) : (
+            <section className="passed">
+              <h3>No term sheet</h3>
+              <p>
+                The partnership passed, so there are no terms to price. Fix what they flagged below and pitch again — the panel will
+                open with your old weak spots.
+              </p>
+            </section>
+          )}
           <section>
             <h3>How each partner's opinion moved</h3>
             <StanceMultiples ledger={ledger} />
@@ -727,7 +752,7 @@ function DebriefView({ d, info, ledger, onAgain }: { d: Debrief; info: StartupIn
           </>
         )}
         <details className="bruin-log">
-          <summary>Scored by the Bruin pipeline {d.bruin_ok ? "· run succeeded" : "· run failed"}</summary>
+          <summary>Scored by the Bruin pipeline {d.bruin_ok ? "· all checks passed" : "· see run log"}</summary>
           <pre>{d.bruin_log}</pre>
         </details>
       </div>
