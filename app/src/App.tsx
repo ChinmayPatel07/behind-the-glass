@@ -110,6 +110,7 @@ export default function App() {
   }, [sessionId]);
 
   async function start(i: StartupInfo) {
+    voice.unlock(); // runs inside the click, so the browser allows the voices that follow
     setInfo(i);
     setAgents(emptyAgents());
     setLedger([]);
