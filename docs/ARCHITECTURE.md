@@ -1,6 +1,6 @@
 # Architecture and handoff
 
-Start here to change or extend Partner Meeting.
+Start here to change or extend Behind the Glass.
 
 ## Layout
 

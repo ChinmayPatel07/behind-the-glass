@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="Partner Meeting: pitch seven AI investors, watch them decide, negotiate the term sheet" width="100%" />
+  <img src="docs/assets/banner.svg" alt="Behind the Glass: pitch seven AI investors, watch them decide, negotiate the term sheet" width="100%" />
 </p>
 
 <p align="center">
@@ -52,7 +52,7 @@ Each investor is its own Claude agent with a **private goal**. Every turn, each 
 | 🔵 | Sam Lindqvist | Associate | Fact-checks your claims on the web, whispers findings |
 | ⚪ | Elena Brooks | General counsel | Protects the firm in the fine print; joins for the term sheet |
 
-The cast mirrors real partner meetings: a sponsoring partner, the full partnership, an associate who did the diligence and counsel ([First Round Review](https://review.firstround.com/heres-what-you-can-really-expect-when-pitching-your-seed-stage-startup-at-a-vc-partner-meeting/)).
+The cast mirrors real partner meetings: a sponsoring partner, the full partnership, an associate who did the diligence and counsel ([First Round Review](https://review.firstround.com/heres-what-you-can-really-expect-when-pitching-your-seed-stage-startup-at-a-vc-behind-the-glass/)).
 
 ## How it works
 

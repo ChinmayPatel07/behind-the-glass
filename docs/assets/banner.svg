@@ -4,8 +4,8 @@
 <radialGradient id="lamp" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fde68a" stop-opacity="0.22"/><stop offset="1" stop-color="#fde68a" stop-opacity="0"/></radialGradient>
 </defs>
 <rect width="1280" height="400" fill="url(#g)"/>
-<text x="72" y="150" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="68" font-weight="700" fill="#f5f5f4" letter-spacing="-1.5">Partner Meeting</text>
-<text x="74" y="200" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="24" fill="#a8a29e">Pitch seven AI investors. Watch them decide behind the glass.</text>
+<text x="72" y="150" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="68" font-weight="700" fill="#f5f5f4" letter-spacing="-1.5">Behind the Glass</text>
+<text x="74" y="200" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="24" fill="#a8a29e">Pitch seven AI investors. Watch them debate you through the glass.</text>
 <text x="74" y="234" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="24" fill="#a8a29e">Negotiate the term sheet. See what your deal really costs.</text>
 <g font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="600">
 <rect x="74" y="280" width="168" height="34" rx="17" fill="#1f1b18" stroke="#fbbf24"/><text x="158" y="302" text-anchor="middle" fill="#fbbf24">7 autonomous agents</text>

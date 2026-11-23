@@ -1,4 +1,4 @@
-# Agent entry point — Partner Meeting
+# Agent entry point — Behind the Glass
 
 Solo hackathon build (Finch "Multiplayer AI" hackathon, Track 3: Grow with Agents).
 Read this file, then `docs/ARCHITECTURE.md` (how the code works) and `docs/PLAN.md` (status).

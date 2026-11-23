@@ -77,5 +77,5 @@ export function createApp(llm: Llm = realLlm) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.PORT) || 8787;
-  createApp().listen(port, () => console.log(`Partner Meeting server on http://localhost:${port}`));
+  createApp().listen(port, () => console.log(`Behind the Glass server on http://localhost:${port}`));
 }

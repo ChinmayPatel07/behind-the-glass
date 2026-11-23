@@ -1,7 +1,7 @@
 /* @bruin
 name: pm.sessions
 type: duckdb.sql
-description: One row per finished Partner Meeting session, ingested from the JSON the app writes to data/sessions/.
+description: One row per finished Behind the Glass session, ingested from the JSON the app writes to data/sessions/.
 materialization:
   type: table
 columns:

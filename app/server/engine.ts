@@ -38,7 +38,7 @@ const AgentTurn = z.object({
   weak_topic: z.enum([...WEAK_TOPICS, "none"]).describe("A founder weak spot you just noticed, or none."),
   weak_quote: z.string().describe("The founder's exact words that showed the weak spot, or empty."),
   fact_check: z.string().describe("Associate only: a factual claim to verify on the web, or empty."),
-  call_partner_meeting: z.boolean().describe("Managing partner only: true when you have heard enough."),
+  call_behind_the_glass: z.boolean().describe("Managing partner only: true when you have heard enough."),
 });
 type AgentTurn = z.infer<typeof AgentTurn>;
 
@@ -290,7 +290,7 @@ ${facts ? `\n${facts}` : ""}`;
 - Only speak if you have a sharp question or reaction; otherwise leave "say" empty.
 - Ask ONE question at a time. Do not repeat a question someone already asked.
 - Associate: put one checkable factual claim in fact_check if the founder made one worth checking.
-- Managing partner: set call_partner_meeting true once the key questions are answered (usually after 3-5 founder answers). Everyone else: false.`,
+- Managing partner: set call_behind_the_glass true once the key questions are answered (usually after 3-5 founder answers). Everyone else: false.`,
     );
 
     // Associate's live web fact-check.
@@ -308,7 +308,7 @@ ${facts ? `\n${facts}` : ""}`;
 
     for (const [a, t] of this.pickSpeakers(turns, PITCH_SPEAKERS)) this.speak(a, t.say);
 
-    const mpWantsMeeting = turns.managing?.call_partner_meeting && this.founderTurns >= 3;
+    const mpWantsMeeting = turns.managing?.call_behind_the_glass && this.founderTurns >= 3;
     if (mpWantsMeeting || this.founderTurns >= 6) {
       this.log("managing", "decision", "Calls the partner meeting: founder steps out.");
       this.speak("managing", "Thank you. Give us a few minutes, we'll call you back in.");
