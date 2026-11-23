@@ -21,6 +21,17 @@ class VoiceQueue {
   private voiceFor = new Map<AgentId, SpeechSynthesisVoice | null>();
   private skipCurrent: (() => void) | null = null;
   private current: HTMLAudioElement | null = null;
+  // One player reused for every line: Safari only lets an element play sound once a click has unlocked it.
+  private player: HTMLAudioElement | null = typeof Audio !== "undefined" ? new Audio() : null;
+
+  // Call from a click handler (e.g. "Walk into the room") so later lines may play with sound.
+  unlock() {
+    const p = this.player;
+    if (!p) return;
+    p.src = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRBqpAAAAAAD/+xDEAAPAAAGkAAAAIAAANIAAAARMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+    p.play().catch(() => {});
+    if (typeof speechSynthesis !== "undefined") speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+  }
 
   onChange(fn: Listener) {
     this.listeners.add(fn);
@@ -90,7 +101,8 @@ class VoiceQueue {
       if (line.speaker === "founder") return finish();
       if (this.muted) return void setTimeout(finish, readMs);
       if (audio) {
-        const el = new Audio(audio);
+        const el = this.player ?? new Audio();
+        el.src = audio;
         el.playbackRate = PLAYBACK_RATE;
         el.preservesPitch = true;
         el.onended = finish;
