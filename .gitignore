@@ -8,3 +8,8 @@ __pycache__/
 *.py[cod]
 .DS_Store
 .vercel
+# Bruin outputs: local DuckDB and real session logs stay on the machine that ran them
+bruin/*.duckdb
+bruin/*.duckdb.wal
+bruin/data/sessions/*.json
+bruin/logs/
