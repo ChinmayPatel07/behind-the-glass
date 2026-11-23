@@ -15,4 +15,6 @@ export const CAST: Record<
 };
 
 // Seat order around the far side of the table, left to right from the founder's view.
+export const portrait = (a: AgentId) => `/portraits/${a}.webp`; // generated with Runware (scripts/generate-portraits.ts)
+
 export const SEAT_ORDER: AgentId[] = ["associate", "numbers", "point", "managing", "skeptic", "domain", "counsel"];
