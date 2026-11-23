@@ -1,0 +1,15 @@
+name: pm.carta_benchmarks
+type: duckdb.seed
+description: Public Carta / YC reference numbers the panel and scorecard compare against. Every row cites its source.
+parameters:
+  path: carta_benchmarks.csv
+columns:
+  - name: metric
+    type: varchar
+    checks:
+      - name: not_null
+      - name: unique
+  - name: value
+    type: double
+    checks:
+      - name: not_null

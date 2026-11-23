@@ -1,0 +1,5 @@
+metric,value,unit,period,source_url,note
+median_seed_valuation,19700000,usd,2026 YTD Q3,https://carta.com/data/state-of-private-markets-q3-2026-full-report/,Median seed valuation through Q3 2026 (report does not state pre or post)
+median_seed_pre_money,16000000,usd,Q1 2025,https://carta.com/data/state-of-private-markets-q1-2025/,Median pre-money valuation in new seed rounds on Carta
+median_seed_dilution,0.19,fraction,2025,https://www.carta.com/data/state-of-private-markets-q4-2025,Seed and Series A median dilution between 19% and 20%
+standard_liq_pref_multiple,1,x,standard,https://www.ycombinator.com/blog/a-standard-and-clean-series-a-term-sheet/,1x non-participating preference is the standard clean term

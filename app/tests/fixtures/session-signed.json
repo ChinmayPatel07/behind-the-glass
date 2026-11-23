@@ -1,0 +1,5 @@
+{"session_id":"t1","founder_key":"test founder","founder_name":"Test Founder","company":"TestCo","stage":"seed","started_at":"2026-11-23T19:00:00Z","ended_at":"2026-11-23T19:10:00Z","outcome":"signed","founder_turns":5,"negotiation_rounds":2,
+"initial_terms":{"raise_amount":3000000,"pre_money":12000000,"liq_pref_multiple":2,"participating":true,"option_pool_pct":0.15,"investor_board_seats":2,"founder_board_seats":1,"independent_board_seats":0,"pro_rata":true,"other_clauses":[]},
+"final_terms":{"raise_amount":3000000,"pre_money":15000000,"liq_pref_multiple":1,"participating":false,"option_pool_pct":0.10,"investor_board_seats":1,"founder_board_seats":2,"independent_board_seats":0,"pro_rata":true,"other_clauses":["no-shop 30 days"]},
+"concessions":[{"term":"pre_money","from":"$12M","to":"$15M","by":"investors"}],"votes":[{"agent":"point","vote":"invest","reason":"x"},{"agent":"skeptic","vote":"pass","reason":"y"}],
+"final_stances":{"point":50},"weak_spots":[{"agent":"numbers","topic":"unit_economics","quote":"\"we haven't measured CAC\""},{"agent":"skeptic","topic":"competition","quote":"\"no competitors\""}],"ledger":[],"transcript":[]}
