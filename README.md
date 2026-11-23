@@ -28,7 +28,7 @@ If they bite, you negotiate a real term sheet. Then a Bruin pipeline prices your
 | | |
 |---|---|
 | **🎤 Pitch & Q&A** | Type your pitch. Seven investors think in parallel; the most urgent ones interrupt, out loud, each with their own voice. Opinion meters over their heads move as you talk. |
-| **🔎 Live fact-checks** | The associate checks your claims on the web and whispers what he found to the devil's advocate. |
+| **🔎 Live fact-checks** | The associate checks your claims on the live web with **Telem** (Exa + Brave in one call), judges them against the sources only, and whispers what he found — with citations — to the devil's advocate. |
 | **🪟 Behind the glass** | The managing partner sends you out. The partners walk to the corner, argue for two rounds and vote — you watch it all. |
 | **📝 Term sheet** | The managing partner sets terms from the debate: valuation, liquidation preference, participation, option pool, board, pro rata, clauses. Negotiate; the partners whisper strategy and concede or hold. |
 | **📊 Debrief** | Bruin scores your deal: dilution vs the Carta seed median, what the terms cost you at a $100M exit, a 5,000-exit Monte Carlo, each partner's opinion over the meeting, plus feedback that quotes your own words. |
@@ -120,7 +120,8 @@ Open **http://localhost:5173**, fill in your startup and walk into the room.
 
 | Layer | Tech |
 |---|---|
-| Agents | Claude API — structured outputs (zod), server-side web search for fact-checks, refusal fallbacks |
+| Agents | Claude API — structured outputs (zod), refusal fallbacks |
+| Live web | **Telem** search router (`router.telem.ai/v1/search`, Exa + Brave, merged and de-duplicated) for the associate's fact-checks |
 | Server | Node 22, Express, Server-Sent Events |
 | 3D | React Three Fiber, drei, post-processing (bloom, vignette, reflective floor); rigged, animated figures; automatic lite mode for weak GPUs |
 | Portraits | **Runware** image inference (`app/scripts/generate-portraits.ts`) |
@@ -139,6 +140,7 @@ Open **http://localhost:5173**, fill in your startup and walk into the room.
 | Bonus: 3D · voice · memory that changes decisions | All three |
 | Bruin (mandatory) | Scores every session (SQL + Python assets) and stores the panel's memory |
 | Runware | Generated the seven photoreal investor portraits |
+| Telem | Live web evidence behind every fact-check, cited in the ledger |
 
 ## Repository
 
@@ -159,7 +161,7 @@ Tests run offline: a Python test for the Monte Carlo asset (`python -m pytest br
 - Upload a pitch deck and let the panel read it
 - Pick a real fund's thesis to pitch against
 - Series A mode (bigger panel, tougher terms)
-- More sponsor integrations: BAND for the private partner channel, Telem for live web data
+- More sponsor integrations: BAND for the private partner channel
 
 ---
 
