@@ -57,6 +57,34 @@ export async function scorecardFor(sessionId: string) {
   return rows[0] ?? null;
 }
 
+export async function waterfallFor(sessionId: string) {
+  const rows = await query(
+    "SELECT version, exit_value, founder_take, founder_take_clean_terms FROM pm.exit_waterfall WHERE session_id = ? ORDER BY version, exit_value",
+    [sessionId],
+  );
+  return rows.map((r) => ({
+    version: String(r.version),
+    exit_value: Number(r.exit_value),
+    founder_take: Number(r.founder_take),
+    founder_take_clean_terms: Number(r.founder_take_clean_terms),
+  }));
+}
+
+// Output of the Python Monte Carlo asset (pm.exit_simulation).
+export async function simulationFor(sessionId: string) {
+  const rows = await query(
+    "SELECT version, p50_take, mean_cost_of_terms, wipeout_pct, simulations FROM pm.exit_simulation WHERE session_id = ? ORDER BY version",
+    [sessionId],
+  );
+  return rows.map((r) => ({
+    version: String(r.version),
+    p50_take: Number(r.p50_take),
+    mean_cost_of_terms: Number(r.mean_cost_of_terms),
+    wipeout_pct: Number(r.wipeout_pct),
+    simulations: Number(r.simulations),
+  }));
+}
+
 export async function weakSpotsFor(founderKey: string) {
   const rows = await query(
     "SELECT topic, times FROM pm.weak_spots WHERE founder_key = ? ORDER BY times DESC LIMIT 5",
