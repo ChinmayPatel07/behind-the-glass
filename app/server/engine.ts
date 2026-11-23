@@ -84,7 +84,7 @@ const Feedback = z.object({
   verdict: z.string().describe("One sentence overall verdict."),
   feedback: z.array(
     z.object({
-      agent: z.enum(["point", "managing", "numbers", "domain", "skeptic", "counsel"]),
+      agent: z.enum(["point", "managing", "numbers", "domain", "skeptic", "associate", "counsel"]),
       text: z.string().describe("Evidence-based feedback quoting the founder's own words, 1-2 sentences."),
     }),
   ),
@@ -509,7 +509,7 @@ Decide privately what you would concede and what you would hold, and whisper you
       fb = await this.llm.structured(
         Feedback,
         `${ROOM_RULES}\nThe meeting is over. You now step out of the negotiation and give the founder honest, specific, evidence-based coaching, each partner in their own voice.`,
-        `Startup: ${this.info.company}. Outcome: ${this.outcome}.\n${this.initialTerms ? `First offer: ${termsText(this.initialTerms)}` : ""}\n${this.terms && this.outcome === "signed" ? `Signed: ${termsText(this.terms)}` : ""}\nScorecard from the data pipeline: ${JSON.stringify(scorecard)}\nWeak spots partners logged:\n${weakLog}\n\nFull transcript:\n${transcript}\n\nGive one verdict sentence and 4-6 feedback items (different partners). Quote the founder's exact words as evidence. Say what to do differently next time.`,
+        `Startup: ${this.info.company}. Outcome: ${this.outcome}.\n${this.initialTerms ? `First offer: ${termsText(this.initialTerms)}` : ""}\n${this.terms && this.outcome === "signed" ? `Signed: ${termsText(this.terms)}` : ""}\nScorecard from the data pipeline: ${JSON.stringify(scorecard)}\nWeak spots partners logged:\n${weakLog}\n\nFull transcript:\n${transcript}\n\nGive one verdict sentence and exactly seven feedback items, one from each partner: point, managing, numbers, domain, skeptic, associate, counsel. Quote the founder's exact words as evidence. Say what to do differently next time.`,
         "medium",
       );
     } catch (e) {

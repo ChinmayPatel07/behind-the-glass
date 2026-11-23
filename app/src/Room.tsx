@@ -269,7 +269,7 @@ function CameraRig({ phase, speaker }: { phase: Phase; speaker: AgentId | null }
     const ease = 1 - Math.pow(1 - intro, 3);
     const outside = phase === "huddle";
     const si = speaker ? SEAT_ORDER.indexOf(speaker) : -1;
-    const sx = si >= 0 ? (si - 3) * 0.98 : 0;
+    const sx = 0 * si; // camera stays steady; only phase changes move it
     const pos = outside
       ? new THREE.Vector3(2.2, 2.3, 7.6)
       : new THREE.Vector3(sx * 0.12, 2.15 + (1 - ease) * 1.4, 6.3 + (1 - ease) * 3.4);

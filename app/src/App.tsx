@@ -614,35 +614,55 @@ function ExitChart({ rows }: { rows: Debrief["waterfall"] }) {
   );
 }
 
-function StanceMultiples({ ledger }: { ledger: LedgerEntry[] }) {
-  const end = Math.max(1, ...ledger.map((e) => e.t));
+// Where each partner started and ended, plus how they voted: a dumbbell per partner on one shared -100..+100 scale.
+function finalStances(ledger: LedgerEntry[]) {
+  return SEAT_ORDER.map((id) => {
+    const moves = ledger.filter((e) => e.agent === id && e.kind === "stance" && e.stance !== undefined);
+    const votes = ledger.filter((e) => e.agent === id && e.kind === "vote");
+    const vote = votes.length ? (votes[votes.length - 1].text.split(" ")[0] ?? "").toUpperCase() : "";
+    return { id, start: id === "point" ? 30 : 0, end: moves.length ? moves[moves.length - 1].stance! : id === "point" ? 30 : 0, vote, moves: moves.length };
+  });
+}
+
+function OpinionShift({ ledger }: { ledger: LedgerEntry[] }) {
+  const rows = finalStances(ledger);
+  const x = (v: number) => 50 + v / 2; // percent across the track
   return (
-    <div className="multiples">
-      {SEAT_ORDER.map((id) => {
-        const pts = [
-          { t: 0, s: id === "point" ? 30 : 0 },
-          ...ledger.filter((e) => e.agent === id && e.kind === "stance" && e.stance !== undefined).map((e) => ({ t: e.t, s: e.stance! })),
-        ];
-        const W = 150, H = 54;
-        const px = (t: number) => (t / end) * (W - 6) + 3;
-        const py = (s: number) => H / 2 - (s / 100) * (H / 2 - 4);
-        const d = pts.map((p, i) => `${i ? "L" : "M"}${px(p.t).toFixed(1)},${py(p.s).toFixed(1)}`).join(" ") + ` L${W - 3},${py(pts[pts.length - 1].s).toFixed(1)}`;
-        const last = pts[pts.length - 1].s;
+    <div className="shift">
+      <div className="shift-scale">
+        <span>Hard pass −100</span>
+        <span>Neutral</span>
+        <span>Must invest +100</span>
+      </div>
+      {rows.map((r) => {
+        const tone = r.end > 25 ? "good" : r.end < -25 ? "bad" : "mid";
+        const lo = Math.min(x(r.start), x(r.end));
+        const hi = Math.max(x(r.start), x(r.end));
         return (
-          <div key={id} className="mult">
-            <div className="mult-head">
-              <Avatar id={id} size={22} />
-              <b>{CAST[id].name.split(" ")[0]}</b>
-              <span className={last > 25 ? "good" : last < -25 ? "bad" : ""}>{last > 0 ? `+${last}` : last}</span>
+          <div key={r.id} className="shift-row" title={`${CAST[r.id].name}: ${r.start} → ${r.end} over ${r.moves} opinion changes${r.vote ? ` · voted ${r.vote}` : ""}`}>
+            <div className="shift-who">
+              <Avatar id={r.id} size={24} />
+              <span>{CAST[r.id].name.split(" ")[0]}</span>
             </div>
-            <svg viewBox={`0 0 ${W} ${H}`} aria-label={`${CAST[id].name} opinion over the meeting`}>
-              <line x1={0} x2={W} y1={H / 2} y2={H / 2} className="grid" />
-              <path d={d} className="spark" />
-              <circle cx={W - 3} cy={py(last)} r={3.5} className="spark-dot" />
-            </svg>
+            <div className="shift-track">
+              <div className="shift-zero" />
+              <div className={`shift-bar ${tone}`} style={{ left: `${lo}%`, width: `${Math.max(hi - lo, 0.6)}%` }} />
+              <div className="shift-start" style={{ left: `${x(r.start)}%` }} />
+              <div className={`shift-end ${tone}`} style={{ left: `${x(r.end)}%` }} />
+            </div>
+            <div className={`shift-val ${tone}`}>{r.end > 0 ? `+${r.end}` : r.end}</div>
+            <div className={`shift-vote ${r.vote === "INVEST" ? "good" : r.vote === "PASS" ? "bad" : ""}`}>{r.vote ? (r.vote === "INVEST" ? "✓ Invest" : r.vote === "PASS" ? "✕ Pass" : "? Undecided") : "—"}</div>
           </div>
         );
       })}
+      <div className="shift-legend">
+        <span>
+          <i className="dot-start" /> start of meeting
+        </span>
+        <span>
+          <i className="dot-end" /> end of meeting
+        </span>
+      </div>
     </div>
   );
 }
@@ -672,6 +692,11 @@ function DebriefView({ d, info, ledger, onAgain, onClose }: { d: Debrief; info: 
     </div>
   );
   const dil = s?.dilution_pct as number | null | undefined;
+  const dealDone = s?.final_pre_money_m != null;
+  const rows = finalStances(ledger);
+  const fan = [...rows].sort((a, b) => b.end - a.end)[0];
+  const critic = [...rows].sort((a, b) => a.end - b.end)[0];
+  const factChecks = ledger.filter((e) => e.kind === "fact_check").length;
   const bench = s?.benchmark_dilution_pct as number | undefined;
   return (
     <div className="debrief">
@@ -693,16 +718,21 @@ function DebriefView({ d, info, ledger, onAgain, onClose }: { d: Debrief; info: 
         {s ? (
           <div className="tiles">
             {tile("Outcome", String(s.outcome).replace("_", " ").replace(/^./, (c) => c.toUpperCase()), `${s.invest_votes} of ${s.total_votes} partners voted to invest`)}
-            {tile("You gave up", dil != null ? `${dil}%` : null, `Seed median ≈ ${bench}% (Carta)`, dil != null && bench != null ? (dil <= bench ? "good" : "bad") : undefined)}
-            {tile("Pre-money", s.final_pre_money_m != null ? `$${s.final_pre_money_m}M` : null, `First offer $${s.first_offer_pre_money_m ?? "—"}M · 2026 median $${s.benchmark_seed_valuation_m}M`)}
-            {tile("Your take at a $100M exit", s.founder_take_at_100m_m != null ? `$${s.founder_take_at_100m_m}M` : null, "Founders' share after preferences")}
-            {tile(
+            {!dealDone && tile("Strongest supporter", `${CAST[fan.id].name.split(" ")[0]} ${fan.end > 0 ? "+" : ""}${fan.end}`, CAST[fan.id].role, "good")}
+            {!dealDone && tile("Toughest critic", `${CAST[critic.id].name.split(" ")[0]} ${critic.end > 0 ? "+" : ""}${critic.end}`, CAST[critic.id].role, critic.end < 0 ? "bad" : undefined)}
+            {!dealDone && tile("Weak spots logged", s.weak_spots_logged, "Claims the partners flagged as thin")}
+            {!dealDone && tile("Fact-checks run", factChecks, "Live web checks (Telem) and diligence (Glasser)")}
+            {!dealDone && tile("Opinion change", `${rows.reduce((t, r) => t + r.end - r.start, 0) > 0 ? "+" : ""}${rows.reduce((t, r) => t + r.end - r.start, 0)}`, "Sum of all seven partners' moves")}
+            {dealDone && tile("You gave up", dil != null ? `${dil}%` : null, `Seed median ≈ ${bench}% (Carta)`, dil != null && bench != null ? (dil <= bench ? "good" : "bad") : undefined)}
+            {dealDone && tile("Pre-money", s.final_pre_money_m != null ? `$${s.final_pre_money_m}M` : null, `First offer $${s.first_offer_pre_money_m ?? "—"}M · 2026 median $${s.benchmark_seed_valuation_m}M`)}
+            {dealDone && tile("Your take at a $100M exit", s.founder_take_at_100m_m != null ? `$${s.founder_take_at_100m_m}M` : null, "Founders' share after preferences")}
+            {dealDone && tile(
               "What the terms cost you",
               s.cost_of_terms_at_100m_m != null ? `$${s.cost_of_terms_at_100m_m}M` : null,
               "vs clean 1x non-participating at the same price",
               s.cost_of_terms_at_100m_m == null ? undefined : Number(s.cost_of_terms_at_100m_m) > 0 ? "bad" : "good",
             )}
-            {tile("Won in negotiation", s.founder_pct_won_in_negotiation != null ? `+${s.founder_pct_won_in_negotiation} pts` : null, `${s.firm_concessions} concessions by the firm · ${s.founder_concessions} by you`)}
+            {dealDone && tile("Won in negotiation", s.founder_pct_won_in_negotiation != null ? `+${s.founder_pct_won_in_negotiation} pts` : null, `${s.firm_concessions} concessions by the firm · ${s.founder_concessions} by you`)}
           </div>
         ) : (
           <div className="muted">The Bruin pipeline did not produce a scorecard for this session — details below.</div>
@@ -725,7 +755,7 @@ function DebriefView({ d, info, ledger, onAgain, onClose }: { d: Debrief; info: 
           )}
           <section>
             <h3>How each partner's opinion moved</h3>
-            <StanceMultiples ledger={ledger} />
+            <OpinionShift ledger={ledger} />
           </section>
         </div>
         <h3>What the partners said about you</h3>
