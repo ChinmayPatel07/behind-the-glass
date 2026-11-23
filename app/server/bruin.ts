@@ -73,7 +73,7 @@ export async function waterfallFor(sessionId: string) {
 // Output of the Python Monte Carlo asset (pm.exit_simulation).
 export async function simulationFor(sessionId: string) {
   const rows = await query(
-    "SELECT version, p50_take, mean_cost_of_terms, wipeout_pct, simulations FROM pm.exit_simulation WHERE session_id = ? ORDER BY version",
+    "SELECT version, CAST(p50_take AS DOUBLE) AS p50_take, CAST(mean_cost_of_terms AS DOUBLE) AS mean_cost_of_terms, CAST(wipeout_pct AS DOUBLE) AS wipeout_pct, CAST(simulations AS INTEGER) AS simulations FROM pm.exit_simulation WHERE session_id = ? ORDER BY version",
     [sessionId],
   );
   return rows.map((r) => ({

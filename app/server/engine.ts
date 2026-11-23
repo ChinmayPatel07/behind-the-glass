@@ -21,6 +21,7 @@ import {
 } from "../src/shared/types.js";
 import { FIRM, PERSONAS, ROOM_RULES } from "./agents.js";
 import { realLlm, type Llm } from "./llm.js";
+import { synthesize } from "./tts.js";
 import { memoryFor, runBruin, scorecardFor, simulationFor, waterfallFor, weakSpotsFor, writeSession } from "./bruin.js";
 
 // Public market reference the panel uses (sources in docs/RESEARCH.md).
@@ -148,10 +149,17 @@ export class Session {
     this.ledger.push(entry);
     this.emit({ type: "ledger", entry });
   }
-  private speak(speaker: AgentId, text: string) {
-    const line = { t: this.t(), speaker, text };
-    this.transcript.push(line);
-    this.emit({ type: "speak", line });
+  // Voices are generated before the line is emitted so caption and audio arrive together.
+  private async speak(speaker: AgentId, text: string) {
+    await this.speakMany([[speaker, text]]);
+  }
+  private async speakMany(lines: [AgentId, string][]) {
+    const audio = await Promise.all(lines.map(([a, text]) => synthesize(a, text).catch(() => null)));
+    lines.forEach(([speaker, text], i) => {
+      const line = { t: this.t(), speaker, text };
+      this.transcript.push(line);
+      this.emit({ type: "speak", line, audio: audio[i] ?? undefined });
+    });
   }
   private pushAgents() {
     this.emit({ type: "agents", agents: Object.values(this.agents) });
@@ -216,7 +224,7 @@ ${facts ? `\n${facts}` : ""}`;
     if (this.memory) this.log("system", "memory", `Panel remembers this founder: ${this.memory}`);
     this.pushAgents();
     this.setPhase("pitch");
-    this.speak(
+    await this.speak(
       "point",
       `Everyone, this is ${this.info.founder_name} from ${this.info.company}. ${this.info.one_liner}. They're raising ${money(this.info.raise_amount)}. ${this.info.founder_name}, the floor is yours.`,
     );
@@ -306,12 +314,12 @@ ${facts ? `\n${facts}` : ""}`;
       }
     }
 
-    for (const [a, t] of this.pickSpeakers(turns, PITCH_SPEAKERS)) this.speak(a, t.say);
+    await this.speakMany(this.pickSpeakers(turns, PITCH_SPEAKERS).map(([a, t]) => [a, t.say] as [AgentId, string]));
 
     const mpWantsMeeting = turns.managing?.call_behind_the_glass && this.founderTurns >= 3;
     if (mpWantsMeeting || this.founderTurns >= 6) {
       this.log("managing", "decision", "Calls the partner meeting: founder steps out.");
-      this.speak("managing", "Thank you. Give us a few minutes, we'll call you back in.");
+      await this.speak("managing", "Thank you. Give us a few minutes, we'll call you back in.");
       await this.huddle();
     }
     this.setBusy(false);
@@ -333,6 +341,7 @@ ${facts ? `\n${facts}` : ""}`;
           ),
         ),
       );
+      const overheard: [AgentId, string][] = [];
       results.forEach((r, i) => {
         const a = AGENT_IDS[i];
         if (r.status !== "fulfilled") return;
@@ -340,13 +349,14 @@ ${facts ? `\n${facts}` : ""}`;
         this.agents[a].stance = Math.max(-100, Math.min(100, Math.round(h.stance)));
         this.agents[a].gesture = h.vote === "invest" ? "nod" : h.vote === "pass" ? "head_shake" : "skeptical_tilt";
         // Round 1 is overheard through the glass; round 2 shows up as votes in the ledger.
-        if (round === 1) this.speak(a, h.argument);
+        if (round === 1) overheard.push([a, h.argument]);
         else this.log(a, "thought", h.argument);
         this.log(a, "vote", `${h.vote.toUpperCase()} — terms view: ${h.terms_view}`);
         roundArgs.push(`${PERSONAS[a].name}: ${h.argument} (vote: ${h.vote}; terms: ${h.terms_view})`);
         if (round === 2) this.votes.push({ agent: a, vote: h.vote, reason: h.argument });
       });
       this.pushAgents();
+      await this.speakMany(overheard);
     }
 
     const tally = this.votes.map((v) => `${PERSONAS[v.agent].name}: ${v.vote}`).join(", ");
@@ -358,7 +368,7 @@ ${facts ? `\n${facts}` : ""}`;
     );
     this.log("managing", "decision", `${d.decision.toUpperCase()}: ${d.reason}`);
     this.setPhase(d.decision === "invest" ? "termsheet" : "closed", "You're called back into the room.");
-    this.speak(d.announcer, d.announcement);
+    await this.speak(d.announcer, d.announcement);
     if (d.decision === "invest") {
       this.terms = d.terms;
       this.initialTerms = structuredClone(d.terms);
@@ -392,7 +402,7 @@ Decide privately what you would concede and what you would hold, and whisper you
     this.terms = move.updated_terms;
     this.log("managing", "decision", `${move.deal_status.replace("_", " ")}: ${move.reason}`);
     this.emit({ type: "terms", terms: move.updated_terms, note: move.deal_status === "final_offer" ? "Final offer." : "Updated terms." });
-    this.speak(move.speaker, move.response);
+    await this.speak(move.speaker, move.response);
     if (move.deal_status === "walk_away") {
       this.outcome = "walked_away";
       this.setPhase("closed", "The firm walked away.");
@@ -421,7 +431,7 @@ Decide privately what you would concede and what you would hold, and whisper you
   async sign() {
     if (this.phase !== "termsheet" || !this.terms || this.busy) return;
     this.outcome = "signed";
-    this.speak("managing", "Then we have a deal. Welcome to the portfolio.");
+    await this.speak("managing", "Then we have a deal. Welcome to the portfolio.");
     this.log("managing", "decision", `Signed: ${termsText(this.terms)}`);
     this.setPhase("closed", "Term sheet signed.");
     await this.finish();
@@ -453,10 +463,10 @@ Decide privately what you would concede and what you would hold, and whisper you
       transcript: this.transcript,
     });
     const bruin = await runBruin();
-    const scorecard = bruin.ok ? await scorecardFor(this.id).catch(() => null) : null;
-    const weak = bruin.ok ? await weakSpotsFor(this.founderKey).catch(() => []) : [];
-    const waterfall = bruin.ok ? await waterfallFor(this.id).catch(() => []) : [];
-    const simulation = bruin.ok ? await simulationFor(this.id).catch(() => []) : [];
+    const scorecard = await scorecardFor(this.id).catch(() => null);
+    const weak = await weakSpotsFor(this.founderKey).catch(() => []);
+    const waterfall = await waterfallFor(this.id).catch(() => []);
+    const simulation = await simulationFor(this.id).catch(() => []);
 
     this.setBusy(true, "Partners are writing your feedback…");
     const transcript = this.transcript

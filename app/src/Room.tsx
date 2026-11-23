@@ -236,7 +236,7 @@ function Boardroom({ phase }: { phase: Phase }) {
           </mesh>
         ))}
       {/* firm name */}
-      <Html position={[0, 5.1, -5.9]} center transform distanceFactor={6} zIndexRange={[1, 0]}>
+      <Html position={[0, 3.45, -5.9]} center transform distanceFactor={6} zIndexRange={[1, 0]}>
         <div className="firm">COPPERLINE VENTURES</div>
       </Html>
     </group>

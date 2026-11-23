@@ -118,7 +118,7 @@ export type ServerEvent =
   | { type: "phase"; phase: Phase; note?: string }
   | { type: "agents"; agents: AgentView[] }
   | { type: "ledger"; entry: LedgerEntry }
-  | { type: "speak"; line: TranscriptLine }
+  | { type: "speak"; line: TranscriptLine; audio?: string }
   | { type: "founder"; line: TranscriptLine }
   | { type: "terms"; terms: Terms; note: string }
   | { type: "busy"; busy: boolean; label?: string }
