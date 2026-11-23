@@ -34,7 +34,7 @@ function standPos(i: number) {
 }
 function huddlePos(i: number) {
   const a = (i / 7) * Math.PI * 2 + 0.3;
-  return new THREE.Vector3(HUDDLE.x + Math.cos(a) * 1.05, 0, HUDDLE.z + Math.sin(a) * 1.05);
+  return new THREE.Vector3(HUDDLE.x + Math.cos(a) * 1.55, 0, HUDDLE.z + Math.sin(a) * 1.55);
 }
 
 type Speaking = { speaker: AgentId; text: string } | null;

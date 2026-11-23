@@ -43,6 +43,8 @@ export default function App() {
   const [info, setInfo] = useState<StartupInfo | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("setup");
+  // What the 3D room shows: follows `phase`, but only after the lines spoken before the change have finished.
+  const [roomPhase, setRoomPhase] = useState<Phase>("setup");
   const [phaseNote, setPhaseNote] = useState("");
   const [agents, setAgents] = useState(emptyAgents);
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
@@ -75,7 +77,10 @@ export default function App() {
           // Leftover partner-meeting chatter is dropped once the founder is called back in.
           if (e.phase === "termsheet") voice.clearPending();
           setPhase(e.phase);
-          setPhaseNote(e.note ?? "");
+          voice.enqueueMarker(() => {
+            setRoomPhase(e.phase);
+            setPhaseNote(e.note ?? "");
+          });
           break;
         case "agents":
           setAgents(Object.fromEntries(e.agents.map((a) => [a.id, a])) as Record<AgentId, AgentView>);
@@ -123,15 +128,16 @@ export default function App() {
     if (!r.ok) return setError(j.error ?? "Could not start");
     setSessionId(j.id);
     setPhase("pitch");
+    setRoomPhase("pitch");
   }
 
   if (phase === "setup" || !info) return <Landing onStart={start} error={error} />;
 
-  const stepIndex = STEPS.findIndex((s) => s.phase.includes(phase));
+  const stepIndex = STEPS.findIndex((s) => s.phase.includes(roomPhase));
   return (
     <div className="layout">
       <div className="stage">
-        <Room agents={agents} phase={phase} speaking={speaking} terms={terms} />
+        <Room agents={agents} phase={roomPhase} speaking={speaking} terms={terms} />
         <header className="topbar">
           <div className="logo">
             <span className="logo-mark" />
@@ -150,8 +156,8 @@ export default function App() {
           </button>
         </header>
         <PanelStrip agents={agents} speaking={speaking?.speaker ?? null} />
-        {phaseNote && phase === "huddle" && <div className="glass-note">{phaseNote}</div>}
-        {terms && (phase === "termsheet" || phase === "closed") && (
+        {phaseNote && roomPhase === "huddle" && <div className="glass-note">{phaseNote}</div>}
+        {terms && (roomPhase === "termsheet" || roomPhase === "closed") && (
           <TermSheet terms={terms} note={termsNote} canSign={phase === "termsheet" && !busy} onSign={() => fetch(`/api/session/${sessionId}/sign`, { method: "POST" })} />
         )}
         <Composer
