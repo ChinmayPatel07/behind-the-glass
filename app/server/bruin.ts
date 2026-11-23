@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 // PM_BRUIN_DIR lets tests point at a scratch copy so they never touch real session data.
 export const BRUIN_DIR = process.env.PM_BRUIN_DIR || path.resolve(here, "../../bruin");
 const SESSIONS_DIR = path.join(BRUIN_DIR, "data/sessions");
-const DB_PATH = path.join(BRUIN_DIR, "partner_meeting.duckdb");
+const DB_PATH = path.join(BRUIN_DIR, "behind_the_glass.duckdb");
 
 export function writeSession(id: string, data: unknown) {
   fs.mkdirSync(SESSIONS_DIR, { recursive: true });

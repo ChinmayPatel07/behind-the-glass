@@ -4,4 +4,4 @@ environments:
     connections:
       duckdb:
         - name: duckdb-default
-          path: partner_meeting.duckdb
+          path: behind_the_glass.duckdb

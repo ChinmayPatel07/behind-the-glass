@@ -65,7 +65,7 @@ export default function App() {
       const e = JSON.parse(m.data) as ServerEvent;
       switch (e.type) {
         case "phase":
-          // Leftover partner-meeting chatter is dropped once the founder is called back in.
+          // Leftover behind-the-glass chatter is dropped once the founder is called back in.
           if (e.phase === "termsheet") voice.clearPending();
           setPhase(e.phase);
           setPhaseNote(e.note ?? "");
@@ -124,7 +124,7 @@ export default function App() {
         <Room agents={agents} phase={phase} speaking={speaking} terms={terms} />
         <div className="hud-top">
           <div className="brand">
-            Partner Meeting <span>· {info.company}</span>
+            Behind the Glass <span>· {info.company}</span>
           </div>
           <div className={`phase phase-${phase}`}>{phaseLabel(phase)}</div>
           {phaseNote && <div className="phase-note">{phaseNote}</div>}
@@ -177,7 +177,7 @@ function Setup({ onStart, error }: { onStart: (i: StartupInfo) => void; error: s
   return (
     <div className="setup">
       <div className="setup-card">
-        <h1>Partner Meeting</h1>
+        <h1>Behind the Glass</h1>
         <p className="lede">
           Pitch seven AI investors at their Monday partner meeting. They question you, fact-check you, debate you behind the glass, and — if
           they bite — negotiate a real term sheet. Then you see what your deal would cost you.

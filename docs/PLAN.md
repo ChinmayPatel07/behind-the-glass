@@ -1,4 +1,4 @@
-# Plan — Partner Meeting
+# Plan — Behind the Glass
 
 **Event:** Finch Multiplayer AI Hackathon (Thanksgiving Special), Nov 23 2026, AWS Builder Loft SF (participating remotely).
 **Track:** 3 — Grow with Agents. **Deadline:** submit by 6:00 PM PT.

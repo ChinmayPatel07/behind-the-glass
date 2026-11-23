@@ -1,4 +1,4 @@
-# Research behind Partner Meeting
+# Research behind Behind the Glass
 
 ## The problem
 - Fundraising is a numbers game founders can't rehearse: Techstars says most founders need 100–200 conversations to close a pre-seed or seed round, and Carta saw 11 checks written from ~4,500 pitch decks (0.2%). Every bad pitch burns a real investor.
@@ -27,7 +27,7 @@ Crewbase Collective runs founder-heavy events (pitch competitions, co-founder ma
 - https://www.svb.com/startup-insights/raising-capital/read-startup-term-sheet/
 - https://www3.carta.com/blog/watch-out-for-these-terms
 - https://www.contrary.com/blog/term-sheet-red-flags
-- https://review.firstround.com/heres-what-you-can-really-expect-when-pitching-your-seed-stage-startup-at-a-vc-partner-meeting/
+- https://review.firstround.com/heres-what-you-can-really-expect-when-pitching-your-seed-stage-startup-at-a-vc-behind-the-glass/
 - https://www.saastr.com/what-actually-happens-in-a-vc-pitch-meeting
 - https://sutton.substack.com/p/take-a-step-inside-a-monday-partners
 - https://luma.com/finch-jd7i
