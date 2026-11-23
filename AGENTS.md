@@ -1,27 +1,21 @@
-# Agent entry point
+# Agent entry point — Partner Meeting
 
-Several agents (Claude Code cloud sessions, local sessions, teammates' agents) write to
-this repo at the same time during the hackathon. Read this file, then `docs/PLAN.md`,
-then your brief in `docs/briefs/` before changing anything.
+Solo hackathon build (Finch "Multiplayer AI" hackathon, Track 3: Grow with Agents).
+Read this file, then `docs/ARCHITECTURE.md` (how the code works) and `docs/PLAN.md` (status).
+Research and sources are in `docs/RESEARCH.md`.
 
-## Working together
+## Hackathon rules we must keep
+- All code written during the event (from 2026-11-23). Libraries and APIs are fine.
+- **Bruin is mandatory** — the `bruin/` pipeline must stay in the product path (it scores sessions and is the agents' memory).
+- At least 3 agents with their own goals, visual characters that move, visible decisions (the ledger).
+- Submit a public repo link + demo before 6:00 PM PT at hackathons.crewbasecollective.com. Demo video edited in AdaL.
 
-- Run `git fetch origin && git status` before editing. Never discard or overwrite files
-  you did not create; another agent may own them.
-- One agent = one brief = one branch. Branch from current `origin/main` as
-  `agent/<brief-name>` (e.g. `agent/frontend-map`). Do not commit directly to `main`.
-- Stay inside the files your brief lists as yours. If you must touch a shared file
-  (package manifests, shared types, routing), keep the change minimal and say so in the PR.
-- Open a PR into `main` when your brief's "done when" checks pass. Small PRs, merged often.
-  Rebase on `origin/main` before opening; never force-push `main` or someone else's branch.
-- Keep credentials and `.env*` files out of commits. Read keys from environment variables
-  and document the variable name in `.env.example`.
-
-## Quality bar
-
-- Real data where the demo claims real data. Mock data is fine in tests and must be
-  labelled as mock in the UI if it ever appears there.
-- Run the build and tests before opening a PR. For UI changes, check the page in a browser
-  (Playwright is available in cloud sessions) and attach a screenshot to the PR.
-- Update `docs/PLAN.md` status when you finish a brief, and write a short handoff note in
-  your brief: what works, what is stubbed, how to run it.
+## Working rules
+- One change = one branch (`feat/…`, `fix/…`, `docs/…`) from current `main`, merged by pull request. Use a separate
+  git worktree per agent so parallel agents never share a checkout. Keep `main` runnable (`cd app && npm run dev`).
+- Before editing: `git fetch` and check `git status`. Never discard work you did not write. Never force-push `main`.
+- No credentials or `.env` files in commits. Keys are read from env vars documented in `app/.env.example`.
+- Real data only where the app claims it: Carta benchmarks in `bruin/assets/carta_benchmarks.csv` carry source URLs.
+  Made-up data is allowed in tests only and never in `bruin/data/sessions/`.
+- Agents decide for themselves: the orchestrator (`app/server/engine.ts`) only gives the floor by each agent's own urgency. Don't script agent lines.
+- Before pushing: `cd app && npm run typecheck && npm test && npm run build`. For UI changes, check the page in a browser.
