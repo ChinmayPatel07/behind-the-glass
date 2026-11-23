@@ -108,7 +108,7 @@ curl -LsSf https://getbruin.com/install/cli | sh
 git clone https://github.com/ChinmayPatel07/finch-hack && cd finch-hack/app && npm install && cp .env.example .env
 ```
 
-Add your key to `app/.env`, then:
+Add your keys to `app/.env` (only the Anthropic key is required; Telem, Runware, Glasser and BAND each switch on their feature when present), then:
 
 ```bash
 npm run dev
@@ -121,6 +121,9 @@ Open **http://localhost:5173**, fill in your startup and walk into the room.
 | Layer | Tech |
 |---|---|
 | Agents | Claude API — structured outputs (zod), refusal fallbacks |
+| Voices | **Runware** audio inference (Inworld TTS 2), one natural voice per investor |
+| Market data | **Glasser** web research (news) for pre-meeting diligence |
+| Agent channel | **BAND** Agent API: the firm's agent opens a room, invites its owner, and posts the partner channel live |
 | Live web | **Telem** search router (`router.telem.ai/v1/search`, Exa + Brave, merged and de-duplicated) for the associate's fact-checks |
 | Server | Node 22, Express, Server-Sent Events |
 | 3D | React Three Fiber, drei, post-processing (bloom, vignette, reflective floor); rigged, animated figures; automatic lite mode for weak GPUs |
@@ -139,8 +142,10 @@ Open **http://localhost:5173**, fill in your startup and walk into the room.
 | ≥3 agents with own goals · characters that move · visible decisions | 7 agents with private goals · walking, gesturing avatars · live decision ledger |
 | Bonus: 3D · voice · memory that changes decisions | All three |
 | Bruin (mandatory) | Scores every session (SQL + Python assets) and stores the panel's memory |
-| Runware | Generated the seven photoreal investor portraits |
+| Runware | The seven photoreal investor portraits and their seven voices |
 | Telem | Live web evidence behind every fact-check, cited in the ledger |
+| Glasser | The associate's pre-meeting diligence memo: recent news in the founder's market, read by every investor |
+| BAND | A live BAND room for the partners' private channel — every whisper, fact-check, vote and decision is posted there as it happens |
 
 ## Repository
 
@@ -161,7 +166,6 @@ Tests run offline: a Python test for the Monte Carlo asset (`python -m pytest br
 - Upload a pitch deck and let the panel read it
 - Pick a real fund's thesis to pitch against
 - Series A mode (bigger panel, tougher terms)
-- More sponsor integrations: BAND for the private partner channel
 
 ---
 
