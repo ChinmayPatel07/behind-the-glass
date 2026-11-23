@@ -1,0 +1,3 @@
+name: partner-meeting
+default_connections:
+  duckdb: duckdb-default
