@@ -40,7 +40,7 @@ export function fakeLlm(opts: { delayMs?: number; huddleDelayMs?: number } = {})
           weak_topic: name.startsWith("Maya") ? "unit_economics" : "none",
           weak_quote: name.startsWith("Maya") ? "(test) quote" : "",
           fact_check: name.startsWith("Sam") && turns === 1 ? "(test) no competitors" : "",
-          call_behind_the_glass: name.startsWith("Harold") && turns >= 3,
+          call_partner_meeting: name.startsWith("Harold") && turns >= 3,
         };
       else if (keys.includes("argument"))
         out = { argument: `(test) ${name} argues.`, vote: name.startsWith("Rex") ? "pass" : "invest", stance: 30, terms_view: "(test) 1x pref" };

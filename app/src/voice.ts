@@ -3,7 +3,7 @@ import type { AgentId, TranscriptLine } from "./shared/types";
 // Plays agent lines one at a time. Normal path: the server sends an MP3 per line (Inworld voices via Runware).
 // Fallback without a Runware key: the browser's own voices, restricted to natural-sounding ones.
 type Listener = (line: TranscriptLine | null) => void;
-type Item = { line: TranscriptLine; audio?: string };
+type Item = { line?: TranscriptLine; audio?: string; marker?: () => void };
 
 // A valid 0.1 s silent WAV, built in code, used to unlock audio inside a click.
 function silentWav() {
@@ -59,6 +59,11 @@ class VoiceQueue {
     this.queue.push({ line, audio });
     if (!this.playing) void this.next();
   }
+  // Runs fn once every line queued before it has been spoken (e.g. move the room to the next phase).
+  enqueueMarker(fn: () => void) {
+    this.queue.push({ marker: fn });
+    if (!this.playing) void this.next();
+  }
   // Skip the line being spoken now.
   skip() {
     this.current?.pause();
@@ -93,13 +98,17 @@ class VoiceQueue {
       return;
     }
     this.playing = true;
-    this.listeners.forEach((l) => l(item.line));
-    await this.say(item);
+    if (item.marker) {
+      item.marker();
+      return void this.next();
+    }
+    this.listeners.forEach((l) => l(item.line!));
+    await this.say(item as { line: TranscriptLine; audio?: string });
     await new Promise((r) => setTimeout(r, 300));
     void this.next();
   }
 
-  private say({ line, audio }: Item) {
+  private say({ line, audio }: { line: TranscriptLine; audio?: string }) {
     const readMs = Math.min(10000, 1400 + line.text.split(/\s+/).length * 360);
     return new Promise<void>((resolve) => {
       let done = false;
