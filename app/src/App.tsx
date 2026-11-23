@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Room from "./Room";
-import { CAST } from "./cast";
+import { CAST, SEAT_ORDER, portrait } from "./cast";
 import { voice } from "./voice";
 import {
   AGENT_IDS,
@@ -18,20 +18,26 @@ import {
 const emptyAgents = () =>
   Object.fromEntries(AGENT_IDS.map((a) => [a, { id: a, stance: 0, gesture: "neutral", thinking: false }])) as Record<AgentId, AgentView>;
 
-const KIND_LABEL: Record<LedgerEntry["kind"], string> = {
-  thought: "thinks",
-  stance: "opinion",
-  whisper: "whispers",
-  fact_check: "fact-check",
-  weakness: "logs weak spot",
-  vote: "votes",
-  decision: "decides",
-  terms: "terms",
-  memory: "memory",
-  system: "system",
+const KIND: Record<LedgerEntry["kind"], { label: string; icon: string }> = {
+  thought: { label: "Private thought", icon: "◐" },
+  stance: { label: "Opinion moved", icon: "↕" },
+  whisper: { label: "Whisper", icon: "⟶" },
+  fact_check: { label: "Fact-check", icon: "⌕" },
+  weakness: { label: "Weak spot logged", icon: "!" },
+  vote: { label: "Vote", icon: "✓" },
+  decision: { label: "Decision", icon: "◆" },
+  terms: { label: "Terms", icon: "§" },
+  memory: { label: "Memory", icon: "◷" },
+  system: { label: "Room", icon: "·" },
 };
 
 const money = (n: number) => `$${(n / 1e6).toFixed(n % 1e6 === 0 ? 0 : 1)}M`;
+const STEPS: { phase: Phase[]; label: string }[] = [
+  { phase: ["pitch"], label: "Pitch" },
+  { phase: ["huddle"], label: "Partner meeting" },
+  { phase: ["termsheet"], label: "Term sheet" },
+  { phase: ["closed", "debrief"], label: "Debrief" },
+];
 
 export default function App() {
   const [info, setInfo] = useState<StartupInfo | null>(null);
@@ -48,7 +54,7 @@ export default function App() {
   const [debrief, setDebrief] = useState<Debrief | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
-  const [filter, setFilter] = useState<"all" | "whisper" | "thought">("all");
+  const [filter, setFilter] = useState<"all" | "whisper" | "decisions">("all");
 
   useEffect(
     () => voice.onChange((l) => setSpeaking(l && l.speaker !== "founder" ? { speaker: l.speaker as AgentId, text: l.text } : null)),
@@ -65,7 +71,7 @@ export default function App() {
       const e = JSON.parse(m.data) as ServerEvent;
       switch (e.type) {
         case "phase":
-          // Leftover behind-the-glass chatter is dropped once the founder is called back in.
+          // Leftover partner-meeting chatter is dropped once the founder is called back in.
           if (e.phase === "termsheet") voice.clearPending();
           setPhase(e.phase);
           setPhaseNote(e.note ?? "");
@@ -116,26 +122,36 @@ export default function App() {
     setPhase("pitch");
   }
 
-  if (phase === "setup" || !info) return <Setup onStart={start} error={error} />;
+  if (phase === "setup" || !info) return <Landing onStart={start} error={error} />;
 
+  const stepIndex = STEPS.findIndex((s) => s.phase.includes(phase));
   return (
     <div className="layout">
       <div className="stage">
         <Room agents={agents} phase={phase} speaking={speaking} terms={terms} />
-        <div className="hud-top">
-          <div className="brand">
-            Behind the Glass <span>· {info.company}</span>
+        <header className="topbar">
+          <div className="logo">
+            <span className="logo-mark" />
+            Behind the Glass <em>· {info.company}</em>
           </div>
-          <div className={`phase phase-${phase}`}>{phaseLabel(phase)}</div>
-          {phaseNote && <div className="phase-note">{phaseNote}</div>}
-          <button className="ghost" onClick={() => setMuted((m) => !m)}>
-            {muted ? "🔇 Voices off" : "🔊 Voices on"}
+          <ol className="stepper">
+            {STEPS.map((s, i) => (
+              <li key={s.label} className={i < stepIndex ? "done" : i === stepIndex ? "now" : ""}>
+                <span>{i + 1}</span>
+                {s.label}
+              </li>
+            ))}
+          </ol>
+          <button className="ghost" onClick={() => setMuted((m) => !m)} aria-label="Toggle voices">
+            {muted ? "Voices off" : "Voices on"}
           </button>
-        </div>
+        </header>
+        <PanelStrip agents={agents} speaking={speaking?.speaker ?? null} />
+        {phaseNote && phase === "huddle" && <div className="glass-note">{phaseNote}</div>}
         {terms && (phase === "termsheet" || phase === "closed") && (
           <TermSheet terms={terms} note={termsNote} canSign={phase === "termsheet" && !busy} onSign={() => fetch(`/api/session/${sessionId}/sign`, { method: "POST" })} />
         )}
-        <Chat
+        <Composer
           lines={lines}
           busy={busy}
           speaking={speaking}
@@ -146,52 +162,176 @@ export default function App() {
           founder={info.founder_name}
           narrow={Boolean(terms && (phase === "termsheet" || phase === "closed"))}
         />
-        {debrief && <DebriefView d={debrief} info={info} onAgain={() => start(info)} />}
+        {debrief && <DebriefView d={debrief} info={info} ledger={ledger} onAgain={() => start(info)} />}
       </div>
       <aside className="ledger">
         <div className="ledger-head">
+          <div className="live">
+            <span className="pulse" /> Live
+          </div>
           <h2>Decision ledger</h2>
-          <p>Every agent's private thoughts, opinion shifts, whispers and votes — live.</p>
+          <p>What every investor privately thinks, whispers and decides.</p>
           <div className="chips">
-            {(["all", "whisper", "thought"] as const).map((f) => (
-              <button key={f} className={filter === f ? "chip on" : "chip"} onClick={() => setFilter(f)}>
-                {f === "all" ? "All" : f === "whisper" ? "Whispers" : "Thoughts"}
+            {(
+              [
+                ["all", "Everything"],
+                ["whisper", "Whispers"],
+                ["decisions", "Votes & decisions"],
+              ] as const
+            ).map(([f, label]) => (
+              <button key={f} className={filter === f ? "chip-btn on" : "chip-btn"} onClick={() => setFilter(f)}>
+                {label}
               </button>
             ))}
           </div>
         </div>
-        <Ledger entries={ledger.filter((e) => filter === "all" || e.kind === filter)} />
+        <Ledger
+          entries={ledger.filter((e) =>
+            filter === "all" ? true : filter === "whisper" ? e.kind === "whisper" : ["vote", "decision", "terms", "memory"].includes(e.kind),
+          )}
+        />
       </aside>
     </div>
   );
 }
 
-function phaseLabel(p: Phase) {
-  return { setup: "Setup", pitch: "Pitch & Q&A", huddle: "Partner meeting (you're outside)", termsheet: "Term sheet negotiation", closed: "Meeting over", debrief: "Debrief" }[p];
+function Avatar({ id, size = 32, ring }: { id: AgentId; size?: number; ring?: boolean }) {
+  return (
+    <img
+      className={ring ? "avatar ring" : "avatar"}
+      src={portrait(id)}
+      alt={CAST[id].name}
+      width={size}
+      height={size}
+      style={{ ["--c" as string]: CAST[id].color, width: size, height: size }}
+    />
+  );
 }
 
-function Setup({ onStart, error }: { onStart: (i: StartupInfo) => void; error: string | null }) {
+function PanelStrip({ agents, speaking }: { agents: Record<AgentId, AgentView>; speaking: AgentId | null }) {
+  return (
+    <div className="panel-strip">
+      {SEAT_ORDER.map((id) => {
+        const v = agents[id];
+        const pct = (v.stance + 100) / 2;
+        const tone = v.stance > 25 ? "good" : v.stance < -25 ? "bad" : "mid";
+        return (
+          <div key={id} className={`pcard ${speaking === id ? "speaking" : ""} ${v.thinking ? "thinking" : ""}`} style={{ ["--c" as string]: CAST[id].color }}>
+            <Avatar id={id} size={40} ring />
+            <div className="pcard-body">
+              <div className="pcard-name">{CAST[id].name}</div>
+              <div className="pcard-role">{v.thinking ? "thinking…" : speaking === id ? "speaking" : CAST[id].role}</div>
+              <div className="stance" title={`Opinion ${v.stance}`}>
+                <div className={`stance-fill ${tone}`} style={{ width: `${pct}%` }} />
+                <div className="stance-mid" />
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Landing({ onStart, error }: { onStart: (i: StartupInfo) => void; error: string | null }) {
   const [f, setF] = useState<StartupInfo>({ founder_name: "", company: "", one_liner: "", stage: "seed", raise_amount: 3_000_000, traction: "", extra: "" });
   const set = (k: keyof StartupInfo) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF({ ...f, [k]: k === "raise_amount" ? Number(e.target.value) * 1e6 : e.target.value });
+  const formRef = useRef<HTMLDivElement>(null);
+  const go = () => formRef.current?.scrollIntoView({ behavior: "smooth" });
   return (
-    <div className="setup">
-      <div className="setup-card">
-        <h1>Behind the Glass</h1>
+    <div className="landing">
+      <nav className="lnav">
+        <div className="logo">
+          <span className="logo-mark" />
+          Behind the Glass
+        </div>
+        <button className="ghost" onClick={go}>
+          Start a meeting
+        </button>
+      </nav>
+      <section className="hero">
+        <div className="eyebrow">A flight simulator for fundraising</div>
+        <h1>
+          Rehearse the raise
+          <br />
+          <span>before it's real.</span>
+        </h1>
         <p className="lede">
-          Pitch seven AI investors at their Monday partner meeting. They question you, fact-check you, debate you behind the glass, and — if
-          they bite — negotiate a real term sheet. Then you see what your deal would cost you.
+          Pitch seven AI investors at their Monday partner meeting. They question you, fact-check you live, debate you behind the glass and
+          vote. If they bite, you negotiate the term sheet — then see exactly what your deal would cost you.
         </p>
+        <div className="hero-cta">
+          <button className="primary lg" onClick={go}>
+            Walk into the room
+          </button>
+          <span className="hint">Typed answers · voices on · about 10 minutes</span>
+        </div>
+        <div className="faces">
+          {SEAT_ORDER.map((id) => (
+            <figure key={id} style={{ ["--c" as string]: CAST[id].color }}>
+              <img src={portrait(id)} alt={CAST[id].name} />
+              <figcaption>
+                <b>{CAST[id].name}</b>
+                <span>{CAST[id].role}</span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+      <section className="facts">
+        <div>
+          <b>100–200</b>
+          <span>investor conversations to close a typical seed round</span>
+          <a href="https://www.techstars.com/blog/founder-advice/the-founders-guide-to-fundraising-rejection" target="_blank" rel="noreferrer">
+            Techstars
+          </a>
+        </div>
+        <div>
+          <b>0.2%</b>
+          <span>of pitch decks one VC reviewed turned into a check</span>
+          <a href="https://carta.com/data/linkedin-pitch-deck-to-funding-rate-vc/" target="_blank" rel="noreferrer">
+            Carta
+          </a>
+        </div>
+        <div>
+          <b>$19.7M</b>
+          <span>median seed valuation in 2026 — the bar your deal is scored against</span>
+          <a href="https://carta.com/data/state-of-private-markets-q3-2026-full-report/" target="_blank" rel="noreferrer">
+            Carta
+          </a>
+        </div>
+      </section>
+      <section className="how">
+        {[
+          ["01", "Pitch", "Type your pitch. Seven investors think in parallel; the most urgent interrupts — out loud."],
+          ["02", "Behind the glass", "You step out. Watch the partners argue, whisper and vote on you."],
+          ["03", "Term sheet", "Negotiate valuation, preferences, board seats and the option pool."],
+          ["04", "Debrief", "Bruin prices your deal against Carta benchmarks. The panel remembers you next time."],
+        ].map(([n, t, d]) => (
+          <div key={n}>
+            <span>{n}</span>
+            <h3>{t}</h3>
+            <p>{d}</p>
+          </div>
+        ))}
+      </section>
+      <section className="setup-card" ref={formRef}>
+        <h2>Your startup</h2>
+        <p className="muted">Use the same name next time — the panel will remember your weak spots.</p>
         <div className="grid2">
           <label>
-            Your name<input value={f.founder_name} onChange={set("founder_name")} placeholder="Same name = the panel remembers you" />
+            Your name
+            <input value={f.founder_name} onChange={set("founder_name")} />
           </label>
           <label>
-            Company<input value={f.company} onChange={set("company")} />
+            Company
+            <input value={f.company} onChange={set("company")} />
           </label>
         </div>
         <label>
-          One-liner<input value={f.one_liner} onChange={set("one_liner")} placeholder="What you do, for whom" />
+          One-liner
+          <input value={f.one_liner} onChange={set("one_liner")} placeholder="What you do, for whom" />
         </label>
         <div className="grid2">
           <label>
@@ -208,28 +348,27 @@ function Setup({ onStart, error }: { onStart: (i: StartupInfo) => void; error: s
           </label>
         </div>
         <label>
-          Traction<textarea rows={2} value={f.traction} onChange={set("traction")} placeholder="Revenue, users, growth, pilots…" />
+          Traction
+          <textarea rows={2} value={f.traction} onChange={set("traction")} placeholder="Revenue, users, growth, pilots…" />
         </label>
         <label>
-          Anything else the panel should know<textarea rows={2} value={f.extra} onChange={set("extra")} />
+          Anything else the panel should know
+          <textarea rows={2} value={f.extra} onChange={set("extra")} />
         </label>
         {error && <div className="err">{error}</div>}
-        <button className="primary" disabled={!f.founder_name || !f.company || !f.one_liner} onClick={() => onStart(f)}>
+        <button className="primary lg" disabled={!f.founder_name || !f.company || !f.one_liner} onClick={() => onStart(f)}>
           Walk into the room →
         </button>
-        <div className="cast-row">
-          {AGENT_IDS.map((a) => (
-            <span key={a} style={{ borderColor: CAST[a].color }}>
-              <b style={{ color: CAST[a].color }}>{CAST[a].name}</b> {CAST[a].role}
-            </span>
-          ))}
-        </div>
-      </div>
+      </section>
+      <footer className="lfoot">
+        Built at the Finch Multiplayer AI Hackathon · Agents by Claude · Scoring and memory by Bruin · Portraits by Runware · Copperline Ventures
+        is fictional.
+      </footer>
     </div>
   );
 }
 
-function Chat(props: {
+function Composer(props: {
   lines: TranscriptLine[];
   busy: string | null;
   speaking: { speaker: AgentId; text: string } | null;
@@ -241,12 +380,14 @@ function Chat(props: {
   narrow: boolean;
 }) {
   const [text, setText] = useState("");
+  const [showLog, setShowLog] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
-  }, [props.lines.length, props.busy]);
+  }, [props.lines.length, showLog]);
   // The founder answers once the partners have finished talking (or skips ahead).
   const canTalk = (props.phase === "pitch" || props.phase === "termsheet") && !props.busy && !props.speaking;
+  const lastFounder = [...props.lines].reverse().find((l) => l.speaker === "founder");
   async function send() {
     const t = text.trim();
     if (!t || !canTalk) return;
@@ -256,29 +397,55 @@ function Chat(props: {
     if (!r.ok) props.setError((await r.json()).error ?? "Could not send");
   }
   return (
-    <div className={props.narrow ? "chat narrow" : "chat"}>
-      <div className="lines">
-        {props.lines.slice(-8).map((l, i) => (
-          <div key={i} className={l.speaker === "founder" ? "line me" : "line"}>
-            <b style={{ color: l.speaker === "founder" ? "#e7e5e4" : CAST[l.speaker].color }}>{l.speaker === "founder" ? props.founder : CAST[l.speaker].name}</b> {l.text}
+    <div className={props.narrow ? "composer narrow" : "composer"}>
+      {showLog && (
+        <div className="transcript">
+          {props.lines.map((l, i) => (
+            <div key={i} className={l.speaker === "founder" ? "tline me" : "tline"}>
+              <b style={{ color: l.speaker === "founder" ? undefined : CAST[l.speaker].color }}>{l.speaker === "founder" ? props.founder : CAST[l.speaker].name}</b>
+              {l.text}
+            </div>
+          ))}
+          <div ref={end} />
+        </div>
+      )}
+      {props.speaking ? (
+        <div className="caption" style={{ ["--c" as string]: CAST[props.speaking.speaker].color }}>
+          <Avatar id={props.speaking.speaker} size={44} ring />
+          <div>
+            <div className="caption-who">
+              {CAST[props.speaking.speaker].name} <span>{CAST[props.speaking.speaker].role}</span>
+            </div>
+            <div className="caption-text">{props.speaking.text}</div>
           </div>
-        ))}
-        {props.busy && <div className="line busy">{props.busy}</div>}
-        {props.speaking && (
           <button className="skip" onClick={() => voice.skip()}>
-            {CAST[props.speaking.speaker].name.split(" ")[0]} is speaking · skip ⏭
+            Skip ›
           </button>
-        )}
-        {props.error && <div className="line err">{props.error}</div>}
-        <div ref={end} />
-      </div>
+        </div>
+      ) : props.busy ? (
+        <div className="caption muted-cap">
+          <span className="spinner" /> {props.busy}
+        </div>
+      ) : lastFounder && props.phase !== "huddle" ? (
+        <div className="caption muted-cap">
+          You: “{lastFounder.text.slice(0, 140)}
+          {lastFounder.text.length > 140 ? "…" : ""}”
+        </div>
+      ) : null}
+      {props.error && <div className="err">{props.error}</div>}
       <div className="input">
         <textarea
           rows={2}
           value={text}
           disabled={!canTalk}
           placeholder={
-            props.phase === "pitch" ? "Type your pitch or answer… (Enter to send)" : props.phase === "termsheet" ? "Negotiate: counter, push back, ask what a clause means…" : props.phase === "huddle" ? "You're outside the room. Watch them decide." : ""
+            props.phase === "pitch"
+              ? "Type your pitch or answer…   Enter to send"
+              : props.phase === "termsheet"
+                ? "Negotiate: counter, push back, ask what a clause means…"
+                : props.phase === "huddle"
+                  ? "You're outside the room. Watch them decide."
+                  : ""
           }
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -288,9 +455,14 @@ function Chat(props: {
             }
           }}
         />
-        <button className="primary" disabled={!canTalk || !text.trim()} onClick={send}>
-          Send
-        </button>
+        <div className="input-actions">
+          <button className="ghost sm" onClick={() => setShowLog((s) => !s)}>
+            {showLog ? "Hide transcript" : "Transcript"}
+          </button>
+          <button className="primary" disabled={!canTalk || !text.trim()} onClick={send}>
+            Send
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -300,20 +472,29 @@ function Ledger({ entries }: { entries: LedgerEntry[] }) {
   const sorted = useMemo(() => [...entries].reverse(), [entries]);
   return (
     <div className="ledger-list">
-      {sorted.length === 0 && <div className="muted">Waiting for the partners to start thinking…</div>}
+      {sorted.length === 0 && <div className="muted pad">Waiting for the partners to start thinking…</div>}
       {sorted.map((e) => {
         const who = e.agent === "system" ? null : CAST[e.agent];
         return (
-          <div key={e.id} className={`entry k-${e.kind}`}>
-            <div className="entry-head">
-              <span className="who" style={{ color: who?.color ?? "#a8a29e" }}>
-                {who ? who.name.split(" ")[0] : "Room"}
-                {e.to && <span className="to"> → {CAST[e.to].name.split(" ")[0]}</span>}
-              </span>
-              <span className="kind">{KIND_LABEL[e.kind]}</span>
-              <span className="time">{Math.floor(e.t / 60000)}:{String(Math.floor(e.t / 1000) % 60).padStart(2, "0")}</span>
+          <div key={e.id} className={`entry k-${e.kind}`} style={{ ["--c" as string]: who?.color ?? "#78716c" }}>
+            {e.agent !== "system" ? <Avatar id={e.agent} size={28} /> : <span className="sys-dot">{KIND[e.kind].icon}</span>}
+            <div className="entry-main">
+              <div className="entry-head">
+                <span className="who">{who ? who.name.split(" ")[0] : "Room"}</span>
+                {e.to && (
+                  <span className="to">
+                    → <Avatar id={e.to} size={16} /> {CAST[e.to].name.split(" ")[0]}
+                  </span>
+                )}
+                <span className="kind">
+                  {KIND[e.kind].icon} {KIND[e.kind].label}
+                </span>
+                <span className="time">
+                  {Math.floor(e.t / 60000)}:{String(Math.floor(e.t / 1000) % 60).padStart(2, "0")}
+                </span>
+              </div>
+              <div className="entry-text">{e.text}</div>
             </div>
-            <div className="entry-text">{e.text}</div>
           </div>
         );
       })}
@@ -325,23 +506,30 @@ function TermSheet({ terms, note, canSign, onSign }: { terms: Terms; note: strin
   const post = terms.pre_money + terms.raise_amount;
   const dil = terms.raise_amount / post;
   const rows: [string, string, boolean][] = [
-    ["Raise", money(terms.raise_amount), false],
+    ["Investment", money(terms.raise_amount), false],
     ["Pre-money valuation", money(terms.pre_money), false],
     ["Investor ownership", `${(dil * 100).toFixed(1)}%`, dil > 0.2],
     ["Option pool (pre-money)", `${(terms.option_pool_pct * 100).toFixed(0)}%`, terms.option_pool_pct > 0.12],
     ["Liquidation preference", `${terms.liq_pref_multiple}x ${terms.participating ? "participating" : "non-participating"}`, terms.liq_pref_multiple > 1 || terms.participating],
     ["Board", `${terms.founder_board_seats} founder · ${terms.investor_board_seats} investor · ${terms.independent_board_seats} indep.`, terms.investor_board_seats >= terms.founder_board_seats],
-    ["Pro rata", terms.pro_rata ? "Yes" : "No", false],
+    ["Pro rata rights", terms.pro_rata ? "Yes" : "No", false],
   ];
   return (
     <div className="termsheet">
-      <div className="ts-title">
-        TERM SHEET <span>Copperline Ventures</span>
+      <div className="ts-head">
+        <div>
+          <div className="ts-kicker">Summary of terms · Series Seed Preferred</div>
+          <div className="ts-firm">Copperline Ventures</div>
+        </div>
+        <div className="ts-note">{note}</div>
       </div>
       {rows.map(([k, v, warn]) => (
         <div key={k} className="ts-row">
           <span>{k}</span>
-          <b className={warn ? "warn" : ""}>{v}</b>
+          <b className={warn ? "warn" : ""}>
+            {warn && <i title="Worse than standard founder-friendly terms">▲ </i>}
+            {v}
+          </b>
         </div>
       ))}
       {terms.other_clauses.length > 0 && (
@@ -351,7 +539,6 @@ function TermSheet({ terms, note, canSign, onSign }: { terms: Terms; note: strin
           ))}
         </ul>
       )}
-      <div className="ts-note">{note}</div>
       {canSign && (
         <button className="sign" onClick={onSign}>
           Sign term sheet
@@ -361,44 +548,175 @@ function TermSheet({ terms, note, canSign, onSign }: { terms: Terms; note: strin
   );
 }
 
-function DebriefView({ d, info, onAgain }: { d: Debrief; info: StartupInfo; onAgain: () => void }) {
+/* ---------- Debrief: an investor-report style read-out ---------- */
+
+const EXIT_COLORS = { clean: "#3987e5", yours: "#d95926" }; // validated dark-mode categorical slots 1–2
+
+function ExitChart({ rows }: { rows: Debrief["waterfall"] }) {
+  const data = rows.filter((r) => r.version === "final");
+  const [hover, setHover] = useState<number | null>(null);
+  if (!data.length) return <div className="muted">No signed terms to price.</div>;
+  const W = 520, H = 220, L = 52, B = 30, T = 14, R = 12;
+  const max = Math.max(...data.map((d) => d.founder_take_clean_terms));
+  const x = (i: number) => L + (i + 0.5) * ((W - L - R) / data.length);
+  const y = (v: number) => T + (H - T - B) * (1 - v / max);
+  const bw = Math.min(34, (W - L - R) / data.length / 3);
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * max);
+  const label = (v: number) => (v >= 1e9 ? `$${v / 1e9}B` : `$${v / 1e6}M`);
+  return (
+    <div className="chart">
+      <div className="chart-legend">
+        <span>
+          <i style={{ background: EXIT_COLORS.clean }} /> Clean 1x terms, same price
+        </span>
+        <span>
+          <i style={{ background: EXIT_COLORS.yours }} /> Your terms
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Founder payout by exit value, your terms versus clean terms">
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} className="grid" />
+            <text x={L - 8} y={y(t) + 4} textAnchor="end" className="axis">
+              ${(t / 1e6).toFixed(0)}M
+            </text>
+          </g>
+        ))}
+        {data.map((d, i) => (
+          <g key={d.exit_value} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
+            <rect x={x(i) - bw - 1} y={T} width={bw * 2 + 2} height={H - T - B} fill="transparent" />
+            <rect x={x(i) - bw - 1} y={y(d.founder_take_clean_terms)} width={bw} height={H - B - y(d.founder_take_clean_terms)} rx={4} fill={EXIT_COLORS.clean} />
+            <rect x={x(i) + 1} y={y(d.founder_take)} width={bw} height={H - B - y(d.founder_take)} rx={4} fill={EXIT_COLORS.yours} />
+            <text x={x(i)} y={H - 10} textAnchor="middle" className="axis">
+              {label(d.exit_value)} exit
+            </text>
+          </g>
+        ))}
+      </svg>
+      {hover !== null && (
+        <div className="tooltip">
+          At a {label(data[hover].exit_value)} exit founders take <b>${(data[hover].founder_take / 1e6).toFixed(2)}M</b> vs $
+          {(data[hover].founder_take_clean_terms / 1e6).toFixed(2)}M on clean terms
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StanceMultiples({ ledger }: { ledger: LedgerEntry[] }) {
+  const end = Math.max(1, ...ledger.map((e) => e.t));
+  return (
+    <div className="multiples">
+      {SEAT_ORDER.map((id) => {
+        const pts = [
+          { t: 0, s: id === "point" ? 30 : 0 },
+          ...ledger.filter((e) => e.agent === id && e.kind === "stance" && e.stance !== undefined).map((e) => ({ t: e.t, s: e.stance! })),
+        ];
+        const W = 150, H = 54;
+        const px = (t: number) => (t / end) * (W - 6) + 3;
+        const py = (s: number) => H / 2 - (s / 100) * (H / 2 - 4);
+        const d = pts.map((p, i) => `${i ? "L" : "M"}${px(p.t).toFixed(1)},${py(p.s).toFixed(1)}`).join(" ") + ` L${W - 3},${py(pts[pts.length - 1].s).toFixed(1)}`;
+        const last = pts[pts.length - 1].s;
+        return (
+          <div key={id} className="mult">
+            <div className="mult-head">
+              <Avatar id={id} size={22} />
+              <b>{CAST[id].name.split(" ")[0]}</b>
+              <span className={last > 25 ? "good" : last < -25 ? "bad" : ""}>{last > 0 ? `+${last}` : last}</span>
+            </div>
+            <svg viewBox={`0 0 ${W} ${H}`} aria-label={`${CAST[id].name} opinion over the meeting`}>
+              <line x1={0} x2={W} y1={H / 2} y2={H / 2} className="grid" />
+              <path d={d} className="spark" />
+              <circle cx={W - 3} cy={py(last)} r={3.5} className="spark-dot" />
+            </svg>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SimulationNote({ sim }: { sim: Debrief["simulation"] }) {
+  const fin = sim.find((r) => r.version === "final");
+  const first = sim.find((r) => r.version === "first_offer");
+  if (!fin) return null;
+  return (
+    <div className="sim">
+      <b>{fin.simulations.toLocaleString()} simulated exits</b> (Bruin · Python Monte Carlo): your final terms leave the founders with nothing in{" "}
+      <b>{fin.wipeout_pct.toFixed(0)}%</b> of outcomes
+      {first && first.wipeout_pct !== fin.wipeout_pct ? <> (the first offer: {first.wipeout_pct.toFixed(0)}%)</> : null}, and cost you{" "}
+      <b>${(fin.mean_cost_of_terms / 1e6).toFixed(2)}M</b> on average versus clean terms. Median founder take:{" "}
+      <b>${(fin.p50_take / 1e6).toFixed(1)}M</b>.
+    </div>
+  );
+}
+
+function DebriefView({ d, info, ledger, onAgain }: { d: Debrief; info: StartupInfo; ledger: LedgerEntry[]; onAgain: () => void }) {
   const s = d.scorecard;
-  const tile = (label: string, value: unknown, sub?: string) => (
-    <div className="tile">
+  const tile = (label: string, value: unknown, sub?: string, tone?: "good" | "bad") => (
+    <div className={`tile ${tone ?? ""}`}>
       <div className="tile-label">{label}</div>
       <div className="tile-value">{value === null || value === undefined ? "—" : String(value)}</div>
       {sub && <div className="tile-sub">{sub}</div>}
     </div>
   );
+  const dil = s?.dilution_pct as number | null | undefined;
+  const bench = s?.benchmark_dilution_pct as number | undefined;
   return (
     <div className="debrief">
-      <div className="debrief-card">
-        <h2>Debrief · {info.company}</h2>
-        <p className="verdict">{d.verdict}</p>
+      <div className="report">
+        <div className="report-head">
+          <div>
+            <div className="eyebrow">Partner meeting debrief · {info.company}</div>
+            <h2>{d.verdict || "The meeting is over."}</h2>
+          </div>
+          <button className="primary" onClick={onAgain}>
+            Pitch again — they'll remember you
+          </button>
+        </div>
         {s ? (
           <div className="tiles">
-            {tile("Outcome", String(s.outcome).replace("_", " "), `${s.invest_votes}/${s.total_votes} partners voted invest`)}
-            {tile("You gave up", s.dilution_pct != null ? `${s.dilution_pct}%` : null, `Seed median ≈ ${s.benchmark_dilution_pct}% (Carta)`)}
-            {tile("Pre-money", s.final_pre_money_m != null ? `$${s.final_pre_money_m}M` : null, `First offer $${s.first_offer_pre_money_m ?? "—"}M · 2026 seed median $${s.benchmark_seed_valuation_m}M`)}
+            {tile("Outcome", String(s.outcome).replace("_", " ").replace(/^./, (c) => c.toUpperCase()), `${s.invest_votes} of ${s.total_votes} partners voted to invest`)}
+            {tile("You gave up", dil != null ? `${dil}%` : null, `Seed median ≈ ${bench}% (Carta)`, dil != null && bench != null ? (dil <= bench ? "good" : "bad") : undefined)}
+            {tile("Pre-money", s.final_pre_money_m != null ? `$${s.final_pre_money_m}M` : null, `First offer $${s.first_offer_pre_money_m ?? "—"}M · 2026 median $${s.benchmark_seed_valuation_m}M`)}
             {tile("Your take at a $100M exit", s.founder_take_at_100m_m != null ? `$${s.founder_take_at_100m_m}M` : null, "Founders' share after preferences")}
-            {tile("What the terms cost you", s.cost_of_terms_at_100m_m != null ? `$${s.cost_of_terms_at_100m_m}M` : null, "vs clean 1x non-participating at the same price")}
-            {tile("Won in negotiation", s.founder_pct_won_in_negotiation != null ? `${s.founder_pct_won_in_negotiation} pts` : null, `${s.firm_concessions} firm concessions · ${s.founder_concessions} by you`)}
+            {tile(
+              "What the terms cost you",
+              s.cost_of_terms_at_100m_m != null ? `$${s.cost_of_terms_at_100m_m}M` : null,
+              "vs clean 1x non-participating at the same price",
+              s.cost_of_terms_at_100m_m == null ? undefined : Number(s.cost_of_terms_at_100m_m) > 0 ? "bad" : "good",
+            )}
+            {tile("Won in negotiation", s.founder_pct_won_in_negotiation != null ? `+${s.founder_pct_won_in_negotiation} pts` : null, `${s.firm_concessions} concessions by the firm · ${s.founder_concessions} by you`)}
           </div>
         ) : (
-          <div className="err">Bruin pipeline did not produce a scorecard. {d.bruin_log}</div>
+          <div className="err">The Bruin pipeline did not produce a scorecard: {d.bruin_log}</div>
         )}
+        <SimulationNote sim={d.simulation} />
+        <div className="report-grid">
+          <section>
+            <h3>What your terms pay you at exit</h3>
+            <ExitChart rows={d.waterfall} />
+          </section>
+          <section>
+            <h3>How each partner's opinion moved</h3>
+            <StanceMultiples ledger={ledger} />
+          </section>
+        </div>
         <h3>What the partners said about you</h3>
         <div className="feedback">
           {d.feedback.map((f, i) => (
-            <div key={i} className="fb" style={{ borderColor: CAST[f.agent].color }}>
-              <b style={{ color: CAST[f.agent].color }}>{CAST[f.agent].name}</b>
-              <p>{f.text}</p>
+            <div key={i} className="fb" style={{ ["--c" as string]: CAST[f.agent].color }}>
+              <Avatar id={f.agent} size={36} ring />
+              <div>
+                <b>{CAST[f.agent].name}</b>
+                <p>{f.text}</p>
+              </div>
             </div>
           ))}
         </div>
         {d.weak_spots.length > 0 && (
           <>
-            <h3>The panel will remember (stored by Bruin)</h3>
+            <h3>The panel will remember</h3>
             <div className="weak">
               {d.weak_spots.map((w) => (
                 <span key={w.topic}>
@@ -409,12 +727,9 @@ function DebriefView({ d, info, onAgain }: { d: Debrief; info: StartupInfo; onAg
           </>
         )}
         <details className="bruin-log">
-          <summary>Bruin pipeline run {d.bruin_ok ? "✓" : "✗"}</summary>
+          <summary>Scored by the Bruin pipeline {d.bruin_ok ? "· run succeeded" : "· run failed"}</summary>
           <pre>{d.bruin_log}</pre>
         </details>
-        <button className="primary" onClick={onAgain}>
-          Pitch again — they'll remember you
-        </button>
       </div>
     </div>
   );

@@ -130,6 +130,8 @@ export interface Debrief {
   feedback: { agent: AgentId; text: string }[];
   scorecard: Record<string, string | number | boolean | null> | null;
   weak_spots: { topic: string; times: number }[];
+  simulation: { version: string; p50_take: number; mean_cost_of_terms: number; wipeout_pct: number; simulations: number }[];
+  waterfall: { version: string; exit_value: number; founder_take: number; founder_take_clean_terms: number }[];
   bruin_ok: boolean;
   bruin_log: string;
 }

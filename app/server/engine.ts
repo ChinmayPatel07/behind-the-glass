@@ -21,7 +21,7 @@ import {
 } from "../src/shared/types.js";
 import { FIRM, PERSONAS, ROOM_RULES } from "./agents.js";
 import { realLlm, type Llm } from "./llm.js";
-import { memoryFor, runBruin, scorecardFor, weakSpotsFor, writeSession } from "./bruin.js";
+import { memoryFor, runBruin, scorecardFor, simulationFor, waterfallFor, weakSpotsFor, writeSession } from "./bruin.js";
 
 // Public market reference the panel uses (sources in docs/RESEARCH.md).
 const MARKET = `Market reference (Carta): 2026 median seed valuation about $19.7M (Q3 2026 report); seed-round dilution has run about 18-20%. Standard founder-friendly seed terms are a 1x non-participating liquidation preference.`;
@@ -455,6 +455,8 @@ Decide privately what you would concede and what you would hold, and whisper you
     const bruin = await runBruin();
     const scorecard = bruin.ok ? await scorecardFor(this.id).catch(() => null) : null;
     const weak = bruin.ok ? await weakSpotsFor(this.founderKey).catch(() => []) : [];
+    const waterfall = bruin.ok ? await waterfallFor(this.id).catch(() => []) : [];
+    const simulation = bruin.ok ? await simulationFor(this.id).catch(() => []) : [];
 
     this.setBusy(true, "Partners are writing your feedback…");
     const transcript = this.transcript
@@ -480,6 +482,8 @@ Decide privately what you would concede and what you would hold, and whisper you
       feedback: fb.feedback,
       scorecard,
       weak_spots: weak,
+      waterfall,
+      simulation,
       bruin_ok: bruin.ok,
       bruin_log: bruin.log,
     };

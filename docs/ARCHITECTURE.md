@@ -59,6 +59,7 @@ firm's move (`NegotiationMove`). Signing or a walk-away triggers the debrief.
 | `pm.scorecard` | Per-session result vs benchmarks; what the negotiation won |
 | `pm.weak_spots` | Weak spots per founder across sessions |
 | `pm.founder_profile` | The memory the agents read next time |
+| `pm.exit_simulation` | Python asset: 5,000-exit Monte Carlo per term sheet (median take, average cost of terms, wipe-out rate) |
 
 ## Events to the browser
 
@@ -70,6 +71,14 @@ firm's move (`NegotiationMove`). Signing or a walk-away triggers the debrief.
 - **Add an agent:** add it to `AgentId`/`AGENT_IDS`, `PERSONAS` (agents.ts), `CAST` and `SEAT_ORDER` (cast.ts).
 - **Change a phase:** the flow lives in `pitchRound`, `huddle`, `negotiationRound`, `sign`, `finish` in engine.ts.
 - **Add a metric:** add a column to `pm.scorecard` (and a test in `tests/bruin-sql.test.ts`), then a tile in `DebriefView`.
+
+## 3D and assets
+
+`Room.tsx` clones one rigged model (`public/models/Xbot.glb`) per investor with its own skeleton, materials and
+animation mixer: idle and walk clips, plus `agree`/`headShake` played additively when an agent picks a nod or head-shake
+gesture; leaning, note-taking and thinking are procedural bone offsets. A lite mode (software GPUs or `?lite`) drops
+reflections, post-processing and shadows. Portraits in `public/portraits` were generated with Runware by
+`scripts/generate-portraits.ts`.
 
 ## Tests
 

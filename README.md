@@ -31,11 +31,14 @@ If they bite, you negotiate a real term sheet. Then a Bruin pipeline prices your
 | **🔎 Live fact-checks** | The associate checks your claims on the web and whispers what he found to the devil's advocate. |
 | **🪟 Behind the glass** | The managing partner sends you out. The partners walk to the corner, argue for two rounds and vote — you watch it all. |
 | **📝 Term sheet** | The managing partner sets terms from the debate: valuation, liquidation preference, participation, option pool, board, pro rata, clauses. Negotiate; the partners whisper strategy and concede or hold. |
-| **📊 Debrief** | Bruin scores your deal: dilution vs the Carta seed median, what the terms cost you at a $100M exit, what you won in negotiation, plus feedback that quotes your own words. |
+| **📊 Debrief** | Bruin scores your deal: dilution vs the Carta seed median, what the terms cost you at a $100M exit, a 5,000-exit Monte Carlo, each partner's opinion over the meeting, plus feedback that quotes your own words. |
 | **🧠 Memory** | Come back with the same name and the panel opens with your old weak spots. |
 
 <p align="center">
-  <img src="docs/assets/room.png" alt="The 3D partner meeting room with seven investors" width="100%" />
+  <img src="docs/assets/landing.png" alt="Landing page with the seven investors" width="100%" />
+</p>
+<p align="center">
+  <img src="docs/assets/room.png" alt="The 3D partner meeting room: investor cards, live opinion bars and the decision ledger" width="100%" />
 </p>
 
 ## The seven agents
@@ -85,12 +88,13 @@ flowchart LR
   S --> TO[pm.term_outcomes<br/>cap-table math]
   TO --> EW[pm.exit_waterfall<br/>founder take at $20M–$500M]
   S --> W[pm.weak_spots]
+  S --> MC[pm.exit_simulation<br/>Python Monte Carlo]
   S & TO & EW & CB --> SC[pm.scorecard]
   SC & CB --> FP[pm.founder_profile]
   FP -.-> AG((agents' memory))
 ```
 
-Assets carry Bruin quality checks (`not_null`, `unique`, `accepted_values`, `non_negative`). Benchmarks used: 2026 median seed valuation ~$19.7M ([Carta Q3 2026](https://carta.com/data/state-of-private-markets-q3-2026-full-report/)), seed dilution ~19% ([Carta 2025](https://www.carta.com/data/state-of-private-markets-q4-2025)), clean terms = 1x non-participating ([YC](https://www.ycombinator.com/blog/a-standard-and-clean-series-a-term-sheet/)).
+`pm.exit_simulation` is a **Python asset**: 5,000 sampled exits per term sheet (numpy), priced under your terms and under clean terms — it shows how often the founders walk away with nothing. Assets carry Bruin quality checks (`not_null`, `unique`, `accepted_values`, `non_negative`). Benchmarks used: 2026 median seed valuation ~$19.7M ([Carta Q3 2026](https://carta.com/data/state-of-private-markets-q3-2026-full-report/)), seed dilution ~19% ([Carta 2025](https://www.carta.com/data/state-of-private-markets-q4-2025)), clean terms = 1x non-participating ([YC](https://www.ycombinator.com/blog/a-standard-and-clean-series-a-term-sheet/)).
 
 ## Quick start
 
@@ -112,19 +116,16 @@ npm run dev
 
 Open **http://localhost:5173**, fill in your startup and walk into the room.
 
-<p align="center">
-  <img src="docs/assets/setup.png" alt="Setup screen" width="80%" />
-</p>
-
 ## Built with
 
 | Layer | Tech |
 |---|---|
 | Agents | Claude API — structured outputs (zod), server-side web search for fact-checks, refusal fallbacks |
 | Server | Node 22, Express, Server-Sent Events |
-| 3D | React, Three.js, React Three Fiber, drei |
+| 3D | React Three Fiber, drei, post-processing (bloom, vignette, reflective floor); rigged, animated figures; automatic lite mode for weak GPUs |
+| Portraits | **Runware** image inference (`app/scripts/generate-portraits.ts`) |
 | Voices | Browser speech synthesis, one voice per agent |
-| Data | **Bruin** pipeline on DuckDB (seed + SQL assets + quality checks) |
+| Data | **Bruin** pipeline on DuckDB: seed, SQL assets, a Python Monte Carlo asset, quality checks |
 
 ## Hackathon checklist
 
@@ -136,7 +137,8 @@ Open **http://localhost:5173**, fill in your startup and walk into the room.
 | Clear result with evidence-based feedback | Bruin scorecard vs Carta + feedback quoting the founder |
 | ≥3 agents with own goals · characters that move · visible decisions | 7 agents with private goals · walking, gesturing avatars · live decision ledger |
 | Bonus: 3D · voice · memory that changes decisions | All three |
-| Bruin (mandatory) | Scores every session and stores the panel's memory |
+| Bruin (mandatory) | Scores every session (SQL + Python assets) and stores the panel's memory |
+| Runware | Generated the seven photoreal investor portraits |
 
 ## Repository
 
@@ -150,15 +152,15 @@ docs/     Plan, research with sources, architecture, images
 cd app && npm run typecheck && npm test && npm run build
 ```
 
-Tests run offline: a whole session (pitch → partner meeting → term sheet → debrief) with a test double for the model, and every Bruin SQL asset on DuckDB against a fixture.
+Tests run offline: a Python test for the Monte Carlo asset (`python -m pytest bruin/tests`), a whole session (pitch → partner meeting → term sheet → debrief) with a test double for the model, and every Bruin SQL asset on DuckDB against a fixture.
 
 ## What's next
 
 - Upload a pitch deck and let the panel read it
 - Pick a real fund's thesis to pitch against
 - Series A mode (bigger panel, tougher terms)
-- Sponsor integrations: Runware-generated partner portraits, BAND for the private partner channel, Telem for live web data
+- More sponsor integrations: BAND for the private partner channel, Telem for live web data
 
 ---
 
-<sub>Built solo in one day at the Finch Multiplayer AI Hackathon, Nov 23 2026. Copperline Ventures and its partners are fictional. This is a practice tool, not legal or financial advice.</sub>
+<sub>3D figure: the rigged "Xbot" model from the three.js examples (Mixamo animations). Built solo in one day at the Finch Multiplayer AI Hackathon, Nov 23 2026. Copperline Ventures and its partners are fictional. This is a practice tool, not legal or financial advice.</sub>
