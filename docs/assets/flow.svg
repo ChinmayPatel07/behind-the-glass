@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="230" viewBox="0 0 1200 230" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1426"/>
+      <stop offset="1" stop-color="#070c18"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#38bdf8"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="230" rx="18" fill="url(#bg)"/>
+  <g font-size="14" fill="#eef3fb" text-anchor="middle">
+    <!-- step boxes: x positions 30, 225, 420, 615, 810, 1005; width 165 -->
+    <g>
+      <rect x="30" y="58" width="165" height="72" rx="12" fill="#111c31" stroke="#38bdf8" stroke-opacity="0.45"/>
+      <text x="112" y="89" font-weight="600">Founder answers</text>
+      <text x="112" y="110" fill="#8d9bb0" font-size="12">typed, every turn</text>
+    </g>
+    <g>
+      <rect x="225" y="58" width="165" height="72" rx="12" fill="#111c31" stroke="#38bdf8" stroke-opacity="0.45"/>
+      <text x="307" y="89" font-weight="600">7 agents think</text>
+      <text x="307" y="110" fill="#8d9bb0" font-size="12">in parallel, own goals</text>
+    </g>
+    <g>
+      <rect x="420" y="58" width="165" height="72" rx="12" fill="#111c31" stroke="#38bdf8" stroke-opacity="0.45"/>
+      <text x="502" y="89" font-weight="600">Most urgent speaks</text>
+      <text x="502" y="110" fill="#8d9bb0" font-size="12">ledger · Telem · BAND</text>
+    </g>
+    <g>
+      <rect x="615" y="58" width="165" height="72" rx="12" fill="#111c31" stroke="#38bdf8" stroke-opacity="0.45"/>
+      <text x="697" y="89" font-weight="600">Behind the glass</text>
+      <text x="697" y="110" fill="#8d9bb0" font-size="12">debate and vote</text>
+    </g>
+    <g>
+      <rect x="810" y="58" width="165" height="72" rx="12" fill="#111c31" stroke="#38bdf8" stroke-opacity="0.45"/>
+      <text x="892" y="89" font-weight="600">Term sheet</text>
+      <text x="892" y="110" fill="#8d9bb0" font-size="12">negotiate, sign</text>
+    </g>
+    <g>
+      <rect x="1005" y="58" width="165" height="72" rx="12" fill="#0c2340" stroke="#38bdf8"/>
+      <text x="1087" y="89" font-weight="600">Bruin scores</text>
+      <text x="1087" y="110" fill="#8d9bb0" font-size="12">scorecard · Monte Carlo</text>
+    </g>
+  </g>
+  <g stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <line x1="197" y1="94" x2="221" y2="94"/>
+    <line x1="392" y1="94" x2="416" y2="94"/>
+    <line x1="587" y1="94" x2="611" y2="94"/>
+    <line x1="782" y1="94" x2="806" y2="94"/>
+    <line x1="977" y1="94" x2="1001" y2="94"/>
+  </g>
+  <!-- memory loop from Bruin back to the agents -->
+  <path d="M1087 132 V176 H307 V136" fill="none" stroke="#7dd3fc" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#arrow)"/>
+  <rect x="612" y="164" width="176" height="24" rx="12" fill="#070c18"/>
+  <text x="700" y="181" text-anchor="middle" font-size="12.5" fill="#7dd3fc">memory for the next session</text>
+  <text x="30" y="34" font-size="12" fill="#8d9bb0" letter-spacing="2">HOW A MEETING RUNS</text>
+</svg>

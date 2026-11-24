@@ -66,15 +66,7 @@ Each investor is a separate Claude agent with a private goal, deciding for itsel
 
 ## How it works
 
-```mermaid
-flowchart LR
-  A[Founder answers] --> B[7 agents think in parallel]
-  B --> C[Most urgent speaks · ledger · BAND]
-  C --> D[Partner meeting and vote]
-  D --> E[Term sheet]
-  E --> F[Bruin scores the deal]
-  F -. memory .-> B
-```
+<p align="center"><img src="docs/assets/flow.svg" alt="How a meeting runs: founder answers, seven agents think in parallel, the most urgent speaks, the partners debate behind the glass, term sheet, Bruin scores the deal and feeds memory back to the agents" width="100%" /></p>
 
 Each turn, every agent returns a structured decision (opinion, urgency, line, whisper, gesture, weak spot, fact-check); the orchestrator only hands the floor to the most urgent. The Bruin pipeline (SQL and a Python Monte Carlo on DuckDB) turns each session into a scorecard and a founder profile the agents read next time. Full diagrams: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -110,7 +102,7 @@ Each integration switches on when its key is present. Built with Claude (structu
 
 ## Run it locally
 
-Requires Node 22+, the [Bruin CLI](https://getbruin.com) and an [Anthropic API key](https://console.anthropic.com). No microphone needed; answers are typed.
+Runs locally, so your API keys stay on your machine. Requires Node 22+, the [Bruin CLI](https://getbruin.com) and an [Anthropic API key](https://console.anthropic.com). No microphone needed; answers are typed.
 
 ```bash
 curl -LsSf https://getbruin.com/install/cli | sh
