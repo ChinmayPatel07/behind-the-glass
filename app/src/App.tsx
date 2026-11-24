@@ -348,24 +348,24 @@ function Landing({ onStart, error }: { onStart: (i: StartupInfo) => void; error:
       </section>
       <section className="setup-card" ref={formRef}>
         <h2>Your startup</h2>
-        <p className="muted">Use the same name next time — the panel will remember your weak spots.</p>
+        <p className="muted">Fields marked * are required. Use the same name next time — the panel will remember your weak spots.</p>
         <div className="grid2">
           <label>
-            Your name
+            <span>Your name <span className="req">*</span></span>
             <input value={f.founder_name} onChange={set("founder_name")} />
           </label>
           <label>
-            Company
+            <span>Company <span className="req">*</span></span>
             <input value={f.company} onChange={set("company")} />
           </label>
         </div>
         <label>
-          One-liner
+          <span>One-liner <span className="req">*</span></span>
           <input value={f.one_liner} onChange={set("one_liner")} placeholder="What you do, for whom" />
         </label>
         <div className="grid2">
           <label>
-            Stage
+            <span>Stage <span className="req">*</span></span>
             <select value={f.stage} onChange={set("stage")} className={f.stage ? "" : "placeholder"}>
               <option value="" disabled>
                 Select stage
@@ -378,17 +378,17 @@ function Landing({ onStart, error }: { onStart: (i: StartupInfo) => void; error:
             </select>
           </label>
           <label>
-            How much are you raising?
+            <span>How much are you raising? <span className="req">*</span></span>
             <input value={raiseText} onChange={(e) => setRaiseText(e.target.value)} placeholder="e.g. $750K, $3M, $1.2B" />
             {raiseText && !raise && <span className="hint-err">Try a format like $750K, $3M or $1.2B</span>}
           </label>
         </div>
         <label>
-          Traction
+          <span>Traction <span className="opt">(optional)</span></span>
           <textarea rows={2} value={f.traction} onChange={set("traction")} placeholder="Revenue, users, growth, pilots…" />
         </label>
         <label>
-          Anything else the panel should know
+          <span>Anything else the panel should know <span className="opt">(optional)</span></span>
           <textarea rows={2} value={f.extra} onChange={set("extra")} />
         </label>
         {error && <div className="err">{error}</div>}
