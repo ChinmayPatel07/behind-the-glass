@@ -2,6 +2,49 @@
 
 Start here to change or extend Behind the Glass.
 
+## Diagrams
+
+### Flow of a meeting
+
+```mermaid
+flowchart TD
+  F([Founder types]) --> T
+  subgraph T[Every turn]
+    direction TB
+    A1[Seven agents think in parallel<br/>own goal · memory · whispers · diligence] --> D[Structured decisions<br/>stance · urgency · line · gesture<br/>whisper · weak spot · fact-check]
+    D --> L[(Decision ledger)]
+    D --> S[Most urgent agent<br/>gets the floor]
+  end
+  S --> V[3D room<br/>voices · gestures · opinion bars]
+  L --> B[BAND room<br/>live partner channel]
+  T -->|managing partner<br/>calls the meeting| H[Partner meeting<br/>two debate rounds and a vote]
+  H -->|invest| TS[Term sheet<br/>negotiation rounds]
+  H -->|pass| DB
+  TS -->|sign or walk away| DB[Session record]
+  DB --> P[[Bruin pipeline on DuckDB]]
+  P --> SC[Scorecard and feedback]
+  P --> M[Founder profile]
+  M -.->|memory next session| A1
+```
+
+### The Bruin pipeline
+
+```mermaid
+flowchart LR
+  J[data/sessions/*.json] --> S[pm.sessions]
+  C[carta_benchmarks.csv<br/>seed with cited sources] --> CB[pm.carta_benchmarks]
+  S --> TO[pm.term_outcomes<br/>cap-table math]
+  TO --> EW[pm.exit_waterfall<br/>founder take at $20M–$500M]
+  S --> W[pm.weak_spots]
+  S --> MC[pm.exit_simulation<br/>Python Monte Carlo]
+  S & TO & EW & CB --> SC[pm.scorecard]
+  SC & CB --> FP[pm.founder_profile]
+  FP -.-> AG((agents' memory))
+```
+
+SQL assets carry Bruin quality checks (`not_null`, `unique`, `accepted_values`, `non_negative`). `pm.exit_simulation` is a Python asset that samples 5,000 exits per term sheet and prices the founders' take under the actual terms and under clean terms — including how often the founders walk away with nothing. Benchmarks: 2026 median seed valuation about $19.7M ([Carta Q3 2026](https://carta.com/data/state-of-private-markets-q3-2026-full-report/)), seed dilution about 19% ([Carta 2025](https://www.carta.com/data/state-of-private-markets-q4-2025)), clean terms as 1x non-participating ([YC](https://www.ycombinator.com/blog/a-standard-and-clean-series-a-term-sheet/)).
+
+
 ## Layout
 
 ```
