@@ -268,7 +268,7 @@ function Landing({ onStart, error }: { onStart: (i: StartupInfo) => void; error:
         </button>
       </nav>
       <section className="hero">
-        <div className="eyebrow">A flight simulator for fundraising</div>
+        <div className="eyebrow">Hear what investors say after you leave the room</div>
         <h1>
           Rehearse the raise
           <br />
