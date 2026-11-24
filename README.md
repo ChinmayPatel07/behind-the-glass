@@ -32,7 +32,7 @@
 
 - **Every bad pitch burns a real investor.** Founders typically need 100–200 investor conversations to close a seed round ([Techstars](https://www.techstars.com/blog/founder-advice/the-founders-guide-to-fundraising-rejection)); one VC wrote 11 checks from about 4,500 decks ([Carta](https://carta.com/data/linkedin-pitch-deck-to-funding-rate-vc/)).
 - **The most expensive mistakes happen in the fine print.** First-time founders often miss what liquidation preferences do and over-focus on valuation ([SVB](https://www.svb.com/startup-insights/raising-capital/read-startup-term-sheet/)); losing board control means you can be fired from your own company ([YC](https://www.ycombinator.com/blog/a-standard-and-clean-series-a-term-sheet/)).
-- **Practice tools stop at the pitch.** Today's AI pitch coaches are one model giving a score. None show what investors say once you have left, and none negotiate the deal.
+- **Practice tools stop at the pitch.** None show what investors say after you leave, and none negotiate the deal.
 
 ## The experience
 
@@ -52,7 +52,7 @@
 
 ## The seven agents
 
-Each investor is a separate Claude agent with a private goal. Every turn, each one independently decides what it thinks, how far its opinion moves, whether to speak, whom to whisper to, how to gesture, which weak spot to log and — for the associate — what to fact-check. The orchestrator only gives the floor to whoever wants it most; it never writes their lines. Every decision is shown in the **decision ledger**.
+Each investor is a separate Claude agent with a private goal, deciding for itself every turn. Every decision is shown in the live **decision ledger**.
 
 | Agent | Role | Private goal |
 |---|---|---|
@@ -64,47 +64,19 @@ Each investor is a separate Claude agent with a private goal. Every turn, each o
 | Sam Lindqvist | Associate | Diligence and live fact-checks; whispers what he finds |
 | Elena Brooks | General counsel | Protects the firm in the fine print; joins for the term sheet |
 
-The cast follows how real partner meetings run: a sponsoring partner, the full partnership, the associate who did the diligence, and counsel ([First Round Review](https://review.firstround.com/heres-what-you-can-really-expect-when-pitching-your-seed-stage-startup-at-a-vc-partner-meeting/)).
-
 ## How it works
 
 ```mermaid
-flowchart TD
-  F([Founder types]) --> T
-  subgraph T[Every turn]
-    direction TB
-    A1[Seven agents think in parallel<br/>own goal · memory · whispers · diligence] --> D[Structured decisions<br/>stance · urgency · line · gesture<br/>whisper · weak spot · fact-check]
-    D --> L[(Decision ledger)]
-    D --> S[Most urgent agent<br/>gets the floor]
-  end
-  S --> V[3D room<br/>voices · gestures · opinion bars]
-  L --> B[BAND room<br/>live partner channel]
-  T -->|managing partner<br/>calls the meeting| H[Partner meeting<br/>two debate rounds and a vote]
-  H -->|invest| TS[Term sheet<br/>negotiation rounds]
-  H -->|pass| DB
-  TS -->|sign or walk away| DB[Session record]
-  DB --> P[[Bruin pipeline on DuckDB]]
-  P --> SC[Scorecard and feedback]
-  P --> M[Founder profile]
-  M -.->|memory next session| A1
-```
-
-### The Bruin pipeline
-
-```mermaid
 flowchart LR
-  J[data/sessions/*.json] --> S[pm.sessions]
-  C[carta_benchmarks.csv<br/>seed with cited sources] --> CB[pm.carta_benchmarks]
-  S --> TO[pm.term_outcomes<br/>cap-table math]
-  TO --> EW[pm.exit_waterfall<br/>founder take at $20M–$500M]
-  S --> W[pm.weak_spots]
-  S --> MC[pm.exit_simulation<br/>Python Monte Carlo]
-  S & TO & EW & CB --> SC[pm.scorecard]
-  SC & CB --> FP[pm.founder_profile]
-  FP -.-> AG((agents' memory))
+  A[Founder answers] --> B[7 agents think in parallel]
+  B --> C[Most urgent speaks · ledger · BAND]
+  C --> D[Partner meeting and vote]
+  D --> E[Term sheet]
+  E --> F[Bruin scores the deal]
+  F -. memory .-> B
 ```
 
-SQL assets carry Bruin quality checks (`not_null`, `unique`, `accepted_values`, `non_negative`). `pm.exit_simulation` is a Python asset that samples 5,000 exits per term sheet and prices the founders' take under the actual terms and under clean terms — including how often the founders walk away with nothing. Benchmarks: 2026 median seed valuation about $19.7M ([Carta Q3 2026](https://carta.com/data/state-of-private-markets-q3-2026-full-report/)), seed dilution about 19% ([Carta 2025](https://www.carta.com/data/state-of-private-markets-q4-2025)), clean terms as 1x non-participating ([YC](https://www.ycombinator.com/blog/a-standard-and-clean-series-a-term-sheet/)).
+Each turn, every agent returns a structured decision (opinion, urgency, line, whisper, gesture, weak spot, fact-check); the orchestrator only hands the floor to the most urgent. The Bruin pipeline (SQL and a Python Monte Carlo on DuckDB) turns each session into a scorecard and a founder profile the agents read next time. Full diagrams: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Sponsor integrations
 
@@ -117,9 +89,10 @@ SQL assets carry Bruin quality checks (`not_null`, `unique`, `accepted_values`, 
 | **BAND** | The firm's BAND agent opens a room, invites its owner, and posts every whisper, fact-check, vote and decision as it happens | [`app/server/sponsors.ts`](app/server/sponsors.ts) |
 | **AdaL** | Demo video editing | — |
 
-Each integration switches on when its key is present; without it the meeting still runs.
+Each integration switches on when its key is present. Built with Claude (structured outputs), Node, React Three Fiber, and Bruin on DuckDB.
 
-## Hackathon requirements
+<details>
+<summary><b>Hackathon requirements checklist</b></summary>
 
 | Requirement | How it is met |
 |---|---|
@@ -132,6 +105,8 @@ Each integration switches on when its key is present; without it the meeting sti
 | Visible decisions | The live decision ledger, mirrored to BAND |
 | Bonus: 3D, voice, learning | 3D room, a natural voice per agent, memory across sessions that changes their decisions |
 | Bruin (mandatory) | Scoring, simulation and memory pipeline |
+
+</details>
 
 ## Run it locally
 
@@ -153,17 +128,8 @@ npm run dev
 
 Open http://localhost:5173.
 
-## Built with
-
-| Layer | Technology |
-|---|---|
-| Agents | Claude API with structured outputs (zod) and refusal fallbacks |
-| Server | Node 22, Express, Server-Sent Events |
-| 3D | React Three Fiber, drei, post-processing; rigged animated figures; automatic lite mode for weak GPUs |
-| Data | Bruin on DuckDB: seed, SQL and Python assets, quality checks |
-| Sponsors | Telem, Runware, Glasser, BAND |
-
-## Repository
+<details>
+<summary><b>Repository layout and tests</b></summary>
 
 ```
 app/      Frontend (React, React Three Fiber) and the agent engine (Node)
@@ -181,11 +147,11 @@ python -m pytest bruin/tests
 
 Tests run offline: a full session (pitch, partner meeting, term sheet, debrief) with a test double for the model, every Bruin SQL asset on DuckDB against a fixture, and the Monte Carlo asset. CI runs all of them. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the engine, the 3D room and the pipeline fit together, and [docs/RESEARCH.md](docs/RESEARCH.md) for the research behind the product.
 
+</details>
+
 ## What's next
 
-- Upload a pitch deck for the panel to read before the meeting
-- Pitch against a real fund's published thesis
-- A Series A mode with a larger panel and tougher terms
+Pitch-deck upload, pitching against a real fund's thesis, and a Series A mode with a larger panel.
 
 ## Team
 
