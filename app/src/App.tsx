@@ -31,7 +31,18 @@ const KIND: Record<LedgerEntry["kind"], { label: string; icon: string }> = {
   system: { label: "Room", icon: "·" },
 };
 
-const money = (n: number) => `$${(n / 1e6).toFixed(n % 1e6 === 0 ? 0 : 1)}M`;
+const money = (n: number) =>
+  n >= 1e9 ? `$${+(n / 1e9).toFixed(2)}B` : n >= 1e6 ? `$${+(n / 1e6).toFixed(1)}M` : `$${Math.round(n / 1e3)}K`;
+
+// "$750K", "3m", "1.2 billion", "2,500,000" -> dollars; 0 when it can't be read.
+export function parseAmount(text: string): number {
+  const m = text.trim().toLowerCase().replace(/[$,\s]/g, "").match(/^(\d+(?:\.\d+)?)(k|thousand|m|mm|mn|million|b|bn|billion)?$/);
+  if (!m) return 0;
+  const unit = m[2] ?? "";
+  const mult = unit.startsWith("k") || unit === "thousand" ? 1e3 : unit.startsWith("m") ? 1e6 : unit.startsWith("b") ? 1e9 : 1;
+  const v = parseFloat(m[1]) * mult;
+  return v >= 1000 ? v : 0;
+}
 const STEPS: { phase: Phase[]; label: string }[] = [
   { phase: ["pitch"], label: "Pitch" },
   { phase: ["huddle"], label: "Partner meeting" },
@@ -251,9 +262,11 @@ function PanelStrip({ agents, speaking }: { agents: Record<AgentId, AgentView>; 
 }
 
 function Landing({ onStart, error }: { onStart: (i: StartupInfo) => void; error: string | null }) {
-  const [f, setF] = useState<StartupInfo>({ founder_name: "", company: "", one_liner: "", stage: "seed", raise_amount: 3_000_000, traction: "", extra: "" });
+  const [f, setF] = useState<StartupInfo>({ founder_name: "", company: "", one_liner: "", stage: "", raise_amount: 0, traction: "", extra: "" });
+  const [raiseText, setRaiseText] = useState("");
   const set = (k: keyof StartupInfo) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setF({ ...f, [k]: k === "raise_amount" ? Number(e.target.value) * 1e6 : e.target.value });
+    setF({ ...f, [k]: e.target.value });
+  const raise = parseAmount(raiseText);
   const formRef = useRef<HTMLDivElement>(null);
   const go = () => formRef.current?.scrollIntoView({ behavior: "smooth" });
   return (
@@ -353,15 +366,21 @@ function Landing({ onStart, error }: { onStart: (i: StartupInfo) => void; error:
         <div className="grid2">
           <label>
             Stage
-            <select value={f.stage} onChange={set("stage")}>
+            <select value={f.stage} onChange={set("stage")} className={f.stage ? "" : "placeholder"}>
+              <option value="" disabled>
+                Select stage
+              </option>
               <option value="pre-seed">Pre-seed</option>
               <option value="seed">Seed</option>
               <option value="series-a">Series A</option>
+              <option value="series-b">Series B</option>
+              <option value="series-c+">Series C+</option>
             </select>
           </label>
           <label>
-            Raising ($M)
-            <input type="number" min={0.25} step={0.25} value={f.raise_amount / 1e6} onChange={set("raise_amount")} />
+            How much are you raising?
+            <input value={raiseText} onChange={(e) => setRaiseText(e.target.value)} placeholder="e.g. $750K, $3M, $1.2B" />
+            {raiseText && !raise && <span className="hint-err">Try a format like $750K, $3M or $1.2B</span>}
           </label>
         </div>
         <label>
@@ -373,12 +392,16 @@ function Landing({ onStart, error }: { onStart: (i: StartupInfo) => void; error:
           <textarea rows={2} value={f.extra} onChange={set("extra")} />
         </label>
         {error && <div className="err">{error}</div>}
-        <button className="primary lg" disabled={!f.founder_name || !f.company || !f.one_liner} onClick={() => onStart(f)}>
+        <button
+          className="primary lg"
+          disabled={!f.founder_name || !f.company || !f.one_liner || !f.stage || !raise}
+          onClick={() => onStart({ ...f, raise_amount: raise })}
+        >
           Walk into the room →
         </button>
       </section>
       <footer className="lfoot">
-        Built at the Finch Multiplayer AI Hackathon · Agents by Claude · Scoring and memory by Bruin · Portraits by Runware · Copperline Ventures
+        Built at the Finch Multiplayer AI Hackathon · Agents by Claude · Scoring and memory by Bruin · Portraits and voices by Runware · Fact-checks by Telem · Diligence by Glasser · Partner channel on BAND · Copperline Ventures
         is fictional.
       </footer>
     </div>
