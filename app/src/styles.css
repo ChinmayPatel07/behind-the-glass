@@ -254,3 +254,5 @@ select { appearance: none; -webkit-appearance: none; height: 44px; padding-right
 select.placeholder { color: var(--muted); }
 select option { color: #0a1020; }
 .hint-err { color: var(--bad); font-size: 12px; }
+.req { color: var(--accent); margin-left: 2px; }
+.opt { color: var(--muted); font-weight: 400; margin-left: 4px; }
