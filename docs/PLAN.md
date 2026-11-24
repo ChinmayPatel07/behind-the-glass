@@ -1,44 +1,27 @@
 # Plan — Behind the Glass
 
-**Event:** Finch Multiplayer AI Hackathon (Thanksgiving Special), Nov 23 2026, AWS Builder Loft SF (participating remotely).
-**Track:** 3 — Grow with Agents. **Deadline:** submit by 6:00 PM PT.
+**Event:** Finch Multiplayer AI Hackathon (Thanksgiving Special), November 23, 2026 — participated remotely.
+**Track:** 3, Grow with Agents. **Deadline:** 6:00 PM PT.
 
 ## Idea
-A founder rehearses a whole seed round against seven AI investors at a VC partner meeting:
-pitch → live Q&A + fact-checks → private partner debate and vote (watched through the glass) →
-term sheet negotiation → debrief that prices the deal against real Carta benchmarks. The panel remembers you next time.
+A founder rehearses a seed round against seven AI investors at a VC partner meeting: pitch, live fact-checks, a
+private partner debate and vote the founder watches through the glass, term sheet negotiation, and a debrief that
+prices the deal against real Carta benchmarks. The panel remembers the founder next time.
 
-## Cast (each agent has its own private goal)
-| Agent | Role |
-|---|---|
-| Priya Raman | Point partner — sponsors you |
-| Harold Voss | Managing partner — final say, calls the partner meeting |
-| Maya Chen | Numbers partner — metrics, valuation |
-| Dev Okafor | Product & market partner |
-| Rex Calloway | Devil's advocate |
-| Sam Lindqvist | Associate — live web fact-checks, whispers findings |
-| Elena Brooks | General counsel — joins for the term sheet |
+## Status at submission
 
-## Pipeline
-Browser (React Three Fiber room, ledger, voices) ⇄ Node orchestrator (7 parallel Claude agents, structured decisions, web-search fact-checks)
-→ session JSON → **Bruin** (DuckDB): `pm.sessions` → `pm.term_outcomes` → `pm.exit_waterfall` → `pm.scorecard`, `pm.weak_spots` → `pm.founder_profile` → agents' memory next session.
-
-## Status
 | Piece | Status |
 |---|---|
-| Repo + agent rules | done |
-| Agent engine (7 agents, pitch → huddle → term sheet → debrief) | done; flow tested offline; live run with API key pending |
-| 3D room, avatars, gestures, opinion meters, speech bubbles | done |
-| Decision ledger | done |
-| Voices (browser TTS, one voice per agent); typed input (no mic) | done |
-| Bruin pipeline (SQL tested on DuckDB, format checked against Bruin docs) | done; first `bruin run` on laptop pending |
-| Tests + CI (typecheck, offline flow test, Bruin SQL test, build) | done |
-| README, architecture doc, license | done |
-| Live run on laptop with key | todo |
-| Sponsor extras: Runware portraits, BAND channel, Telem fact-check | stretch |
-| AdaL demo video, README screenshots, submission | todo |
+| Agent engine: seven agents with private goals, parallel turns, partner meeting, negotiation, debrief | Done, tested live |
+| 3D boardroom: rigged animated figures, gestures, walk to the huddle, lite mode for weak GPUs | Done |
+| Interface: landing page, investor cards, captions, decision ledger, term sheet, debrief report with charts | Done |
+| Voices: one natural voice per investor (Runware, Inworld TTS) | Done, tested live |
+| Bruin pipeline: SQL assets, Python Monte Carlo, quality checks, founder memory | Done, tested live |
+| Telem fact-checks, Glasser diligence, BAND partner channel, Runware portraits | Done, tested live |
+| Tests and CI: offline session flow, Bruin SQL, Monte Carlo | Done |
+| README, architecture, research, social preview | Done |
+| Demo video (AdaL) and submission | In progress |
 
-## Submission checklist
-- [ ] Public repo
-- [ ] Demo video (AdaL)
-- [ ] Submitted on hackathons.crewbasecollective.com before 6 PM PT
+## Not in scope tonight
+Hosting the live app (it needs an always-on server and spends API credit per meeting); it runs locally from the
+README. Ideas for later are in the README under "What's next".
