@@ -11,7 +11,7 @@
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-e5e7eb?style=flat-square" />
 </p>
 
-<p align="center"><b>A flight simulator for fundraising.</b><br/>
+<p align="center"><b>Hear what investors say after you leave the room.</b><br/>
 Pitch seven AI investors at their Monday partner meeting. They question you, fact-check you live, debate you behind the glass and vote.
 If they bite, you negotiate a real term sheet. Then a Bruin pipeline prices your deal against real market data — and the panel remembers you next time.</p>
 

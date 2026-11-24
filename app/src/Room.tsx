@@ -180,7 +180,7 @@ function Skyline() {
       })}
       <mesh position={[0, 12, -40]}>
         <planeGeometry args={[140, 40]} />
-        <meshBasicMaterial color="#141a2b" />
+        <meshBasicMaterial color="#0b1426" />
       </mesh>
     </group>
   );
@@ -204,7 +204,7 @@ function Boardroom({ phase }: { phase: Phase }) {
       </RoundedBox>
       <mesh position={[0, 0.935, 0.85]}>
         <boxGeometry args={[6.8, 0.012, 0.012]} />
-        <meshBasicMaterial color="#fbbf24" toneMapped={false} />
+        <meshBasicMaterial color="#38bdf8" toneMapped={false} />
       </mesh>
       {[-2.6, 2.6].map((x) => (
         <mesh key={x} position={[x, 0.47, 0.15]}>
@@ -284,8 +284,8 @@ function CameraRig({ phase, speaker }: { phase: Phase; speaker: AgentId | null }
 export default function Room(props: { agents: Record<AgentId, AgentView>; phase: Phase; speaking: Speaking; terms: Terms | null }) {
   return (
     <Canvas shadows={!LITE} camera={{ position: [0, 4, 9.6], fov: 50 }} dpr={LITE ? 1 : [1, 1.75]} gl={{ antialias: !LITE }}>
-      <color attach="background" args={["#05060a"]} />
-      <fog attach="fog" args={["#05060a", 18, 60]} />
+      <color attach="background" args={["#050a16"]} />
+      <fog attach="fog" args={["#050a16", 18, 60]} />
       <ambientLight intensity={0.5} />
       <spotLight position={[0, 7, 3]} angle={0.6} penumbra={0.9} intensity={38} castShadow shadow-mapSize={[1024, 1024]} color="#fff1d6" />
       <directionalLight position={[0, 3, 7]} intensity={1.1} color="#ffe9cc" />
@@ -293,7 +293,7 @@ export default function Room(props: { agents: Record<AgentId, AgentView>; phase:
       <Environment resolution={256} frames={1}>
         <Lightformer form="rect" intensity={2} position={[0, 5, 2]} scale={[10, 2, 1]} color="#fff3dc" />
         <Lightformer form="rect" intensity={1.2} position={[-6, 2, -4]} scale={[4, 6, 1]} color="#7aa2ff" />
-        <Lightformer form="ring" intensity={1.5} position={[5, 3, 4]} scale={2} color="#fbbf24" />
+        <Lightformer form="ring" intensity={1.5} position={[5, 3, 4]} scale={2} color="#38bdf8" />
       </Environment>
       <CameraRig phase={props.phase} speaker={props.speaking?.speaker ?? null} />
       <Skyline />
