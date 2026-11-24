@@ -93,7 +93,8 @@ const Feedback = z.object({
 const PITCH_SPEAKERS = AGENT_IDS.filter((a) => PERSONAS[a].speaksIn.includes("pitch"));
 const NEGOTIATORS: AgentId[] = ["point", "managing", "numbers", "skeptic", "counsel"];
 
-const money = (n: number) => `$${(n / 1e6).toFixed(n % 1e6 === 0 ? 0 : 1)}M`;
+const money = (n: number) =>
+  n >= 1e9 ? `$${+(n / 1e9).toFixed(2)}B` : n >= 1e6 ? `$${+(n / 1e6).toFixed(1)}M` : `$${Math.round(n / 1e3)}K`;
 export const termsText = (t: Terms) =>
   `raise ${money(t.raise_amount)} at ${money(t.pre_money)} pre-money; ${t.liq_pref_multiple}x ${t.participating ? "participating" : "non-participating"} liquidation preference; option pool ${(t.option_pool_pct * 100).toFixed(0)}% of post; board ${t.founder_board_seats} founder / ${t.investor_board_seats} investor / ${t.independent_board_seats} independent; pro rata ${t.pro_rata ? "yes" : "no"}${t.other_clauses.length ? `; other: ${t.other_clauses.join("; ")}` : ""}.`;
 
